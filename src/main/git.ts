@@ -150,6 +150,25 @@ class GitService {
     return { ok: true, message: 'Remote configured.' }
   }
 
+  async ghLogin(): Promise<string | null> {
+    const res = await run('gh', ['api', 'user', '--jq', '.login'], this.root, { timeout: 20000 })
+    if (res.code !== 0) return null
+    return res.stdout.trim() || null
+  }
+
+  async repoView(fullName: string): Promise<{ exists: boolean; url?: string; visibility?: string }> {
+    const res = await run('gh', ['repo', 'view', fullName, '--json', 'url,visibility'], this.root, {
+      timeout: 20000
+    })
+    if (res.code !== 0) return { exists: false }
+    try {
+      const data = JSON.parse(res.stdout) as { url?: string; visibility?: string }
+      return { exists: true, url: data.url, visibility: data.visibility }
+    } catch {
+      return { exists: false }
+    }
+  }
+
   async createRepo(name: string): Promise<CreateRepoResult> {
     const ghCheck = await run('gh', ['--version'], this.root, { timeout: 8000 })
     if (ghCheck.code !== 0) {

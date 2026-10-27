@@ -59,20 +59,41 @@ npm run dist:x64   # or a single architecture
 
 Artifacts are written to `release/`. The build is unsigned (`identity: null`), which is fine for local use. If you download the DMG from elsewhere, right-click → Open the first time.
 
+### Repositories
+
+| Repository | Visibility | Purpose |
+| --- | --- | --- |
+| [petergiampaoli/slate](https://github.com/petergiampaoli/slate) | **public** | Application source |
+| [petergiampaoli/slate-vault-user-Peter](https://github.com/petergiampaoli/slate-vault-user-Peter) | **private** | Peter’s notes (the default user) |
+
+Every user gets their own **private** notes repository following the same convention:
+
+```
+slate-vault-user-<Name>
+```
+
+Slate never puts notes in the application repository. The earlier single `slate-vault` repository was archived after its history was moved to `slate-vault-user-Peter`.
+
 ### The vault
 
-On first launch Slate creates `~/Documents/Slate Vault` with a welcome note, a Markdown cheat sheet, daily-note and meeting templates. You can open any existing folder of Markdown files instead.
+On first launch Slate creates `~/Documents/Slate Vault` with a welcome note, a Markdown cheat sheet, daily-note and meeting templates. Additional users live in `~/Documents/Slate Vaults/<Name>`. You can open any existing folder of Markdown files instead.
 
-The vault for this project has already been created and pushed to:
+### Users
 
-```
-https://github.com/petergiampaoli/slate-vault   (private)
-```
+![User settings](docs/screenshot-users.png)
+
+Slate is multi-user by design, so one Mac can host several people’s private vaults:
+
+- The active user is shown in **Settings → General** and in the status bar.
+- **Switch user…** opens that user’s vault. If the private repo exists it is cloned; if it does not, Slate creates the folder, starter notes and a private `slate-vault-user-<Name>` repository automatically.
+- **+ New user vault** does the same for a brand-new name.
+- Every user’s notes, git history and sync state are completely separate.
+- The same actions are available from the command palette (`⌘P` → “Switch user vault”).
 
 ### Setting up sync in a new vault
 
 1. Open **Settings → Sync & backup** (`⌘,`).
-2. Press **Create private repo** — Slate runs `gh repo create <name> --private --source . --remote origin --push`.
+2. Press **Create private repo** — Slate runs `gh repo create slate-vault-user-<Name> --private --source . --remote origin --push`.
    Requires the GitHub CLI (`brew install gh`) and `gh auth login`.
 3. Or paste an existing repository URL and press **Save**.
 4. Use `⌘⇧S` or the status-bar item to sync manually.

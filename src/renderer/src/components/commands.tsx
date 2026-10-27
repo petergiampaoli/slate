@@ -37,6 +37,8 @@ import {
   Table,
   Tags,
   Trash2,
+  UserPlus,
+  Users,
   Type,
   Quote,
   X
@@ -490,6 +492,36 @@ export function buildCommands(): Command[] {
       hotkey: '⌘⇧S',
       group: 'Sync',
       run: () => s.syncNow()
+    },
+    {
+      id: 'switch-user',
+      label: 'Switch user vault…',
+      icon: Users,
+      detail: 'Open or create another user’s private vault',
+      group: 'Sync',
+      run: () => {
+        const profile = useStore.getState().settings.profile
+        useStore.getState().showModal({
+          type: 'prompt',
+          title: 'Switch user vault',
+          label: `Signed in as ${profile.name}. Enter another user to open or create their private vault.`,
+          value: profile.name,
+          placeholder: 'User name',
+          submitLabel: 'Switch',
+          onSubmit: async (value) => {
+            useStore.getState().hideModal()
+            await useStore.getState().switchUser(value)
+          }
+        })
+      }
+    },
+    {
+      id: 'add-user',
+      label: 'Create user vault…',
+      icon: UserPlus,
+      detail: 'New private repo named slate-vault-user-<name>',
+      group: 'Sync',
+      run: () => void useStore.getState().addUser()
     },
     {
       id: 'sync-settings',

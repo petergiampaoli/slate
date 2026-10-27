@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
+import { repoNameFor } from '@shared/naming'
 import type { AppSettings, SlateApi, VaultChange } from '@shared/types'
 
 function subscribe<T>(channel: string, cb: (payload: T) => void): () => void {
@@ -60,6 +61,11 @@ const api: SlateApi = {
     openPath: (path) => ipcRenderer.invoke('shell:openPath', path),
     showItemInFolder: (path) => ipcRenderer.invoke('shell:showItemInFolder', path),
     trash: (path) => ipcRenderer.invoke('shell:trash', path)
+  },
+  users: {
+    provision: (name, preferredPath) => ipcRenderer.invoke('users:provision', name, preferredPath),
+    defaultPath: (name) => ipcRenderer.invoke('users:defaultPath', name),
+    repoName: (name) => repoNameFor(name)
   },
   files: {
     pathFor: (file) => webUtils.getPathForFile(file as File)

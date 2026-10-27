@@ -198,6 +198,8 @@ interface AppState {
   setSearchQuery: (q: string) => void
   refreshGit: () => Promise<void>
   syncNow: (message?: string) => Promise<void>
+  switchUser: (name: string) => Promise<void>
+  addUser: () => Promise<void>
   openVault: (path: string) => Promise<void>
   chooseVault: () => Promise<void>
   createVault: (name: string) => Promise<void>
@@ -306,6 +308,16 @@ export const useStore = create<AppState>((set, get) => ({
       panes: [firstPane],
       activePaneId: firstPane.id
     })
+    if (vault && settings.profile) {
+      const profile = settings.profile
+      if (profile.vaults[profile.name] !== vault.path) {
+        const next = await api.settings.set({
+          profile: { ...profile, vaults: { ...profile.vaults, [profile.name]: vault.path } },
+          vaultPath: vault.path
+        })
+        set({ settings: next })
+      }
+    }
     if (vault) {
       try {
         await get().boot()
@@ -413,23 +425,50 @@ export const useStore = create<AppState>((set, get) => ({
   persistWorkspace() {
     if (workspaceTimer) clearTimeout(workspaceTimer)
     workspaceTimer = setTimeout(() => {
-      const { panes, activePaneId } = get()
-      api.settings
-        .set({ workspace: { panes, activePaneId } })
+      const { panes, activePaneId, settings } = get()
+      const profile = settings.profile
+      const seen = new Set<string>()
+      const deduped = panes.map((pane) => ({
+        ...pane,
+        tabs: pane.tabs.filter((t) => {
+          const key = t.path ? `path:${t.path}` : t.kind
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+      }))
+      void get()
+        .setSettings({
+          profile: {
+            ...profile,
+            workspaces: {
+              ...(profile.workspaces ?? {}),
+              [profile.name]: { panes: deduped, activePaneId }
+            }
+          }
+        })
         .catch(() => undefined)
     }, 400)
   },
 
   restoreWorkspace() {
-    const { settings, index, files } = get()
+    const { settings, files } = get()
     const exists = (p: string | undefined): boolean => Boolean(p && files.includes(p))
-    const saved = settings.workspace
+    const saved = settings.profile?.workspaces?.[settings.profile.name] ?? settings.workspace
     if (saved && saved.panes?.length) {
       const panes = saved.panes
-        .map((pane) => ({
-          ...pane,
-          tabs: pane.tabs.filter((t) => t.kind !== 'note' || exists(t.path))
-        }))
+        .map((pane) => {
+          const seen = new Set<string>()
+          const tabs = pane.tabs
+            .filter((t) => t.kind !== 'note' || exists(t.path))
+            .filter((t) => {
+              const key = t.path ? `path:${t.path}` : t.kind
+              if (seen.has(key)) return false
+              seen.add(key)
+              return true
+            })
+          return { ...pane, tabs }
+        })
         .filter((pane) => pane.tabs.length > 0)
         .map((pane) => ({
           ...pane,
@@ -437,6 +476,7 @@ export const useStore = create<AppState>((set, get) => ({
         }))
       if (panes.length) {
         set({ panes, activePaneId: panes.some((p) => p.id === saved.activePaneId) ? saved.activePaneId : panes[0].id })
+        if (!settings.profile?.workspaces?.[settings.profile.name]) get().persistWorkspace()
         return
       }
     }
@@ -447,6 +487,7 @@ export const useStore = create<AppState>((set, get) => ({
       pane.activeTabId = pane.tabs[0].id
     }
     set({ panes: [pane], activePaneId: pane.id })
+    if (!settings.profile?.workspaces?.[settings.profile.name] && settings.workspace) get().persistWorkspace()
   },
 
   setSidebarTab: (tab) => {
@@ -491,6 +532,10 @@ export const useStore = create<AppState>((set, get) => ({
 
   async openNote(path, opts = {}) {
     if (!path) return
+    if (path.toLowerCase().endsWith('.canvas')) {
+      get().openSpecial('canvas', { path })
+      return
+    }
     const state = get()
     if (!opts.newTab) {
       const found = findTabWithNote(state.panes, path)
@@ -1077,15 +1122,28 @@ export const useStore = create<AppState>((set, get) => ({
     const info = await api.vault.open(path)
     if (!info) return
     await get().saveAll()
+    const profile = get().settings.profile
+    await get().setSettings({
+      profile: { ...profile, vaults: { ...profile.vaults, [profile.name]: info.path } },
+      vaultPath: info.path,
+      workspace: null
+    })
     set({ vault: info, panes: [newPane()], contents: {}, savedContents: {}, dirty: {}, index: EMPTY_INDEX, tree: [], files: [] })
     await get().boot()
     await get().refreshGit()
+    get().toast(`Opened ${info.name}`, 'success')
   },
 
   async chooseVault() {
     const info = await api.vault.choose()
     if (!info) return
     await get().saveAll()
+    const profile = get().settings.profile
+    await get().setSettings({
+      profile: { ...profile, vaults: { ...profile.vaults, [profile.name]: info.path } },
+      vaultPath: info.path,
+      workspace: null
+    })
     set({ vault: info, panes: [newPane()], contents: {}, savedContents: {}, dirty: {}, index: EMPTY_INDEX, tree: [], files: [] })
     await get().boot()
     await get().refreshGit()
@@ -1094,9 +1152,78 @@ export const useStore = create<AppState>((set, get) => ({
   async createVault(name) {
     const info = await api.vault.createVault(name)
     if (!info) return
+    const profile = get().settings.profile
+    await get().setSettings({
+      profile: { ...profile, vaults: { ...profile.vaults, [profile.name]: info.path } },
+      vaultPath: info.path,
+      workspace: null
+    })
     set({ vault: info, panes: [newPane()], contents: {}, savedContents: {}, dirty: {}, index: EMPTY_INDEX, tree: [], files: [] })
     await get().boot()
     await get().refreshGit()
+    get().toast(`Created ${info.name}`, 'success')
+  },
+
+  async switchUser(name) {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const state = get()
+    const profile = state.settings.profile
+    if (trimmed.toLowerCase() === profile.name.toLowerCase() && state.vault) {
+      state.toast(`Already using ${profile.name}’s vault.`, 'info')
+      return
+    }
+    await state.saveAll()
+    const preferred = profile.vaults[trimmed]
+    const result = await api.users.provision(trimmed, preferred)
+    if (!result.ok || !result.path) {
+      state.toast(result.message, 'error')
+      return
+    }
+    const info: VaultInfo = {
+      path: result.path,
+      name: result.path.split('/').pop() ?? result.userName
+    }
+    await get().setSettings({
+      profile: {
+        ...profile,
+        name: result.userName,
+        vaults: { ...profile.vaults, [result.userName]: result.path }
+      },
+      vaultPath: result.path,
+      workspace: null
+    })
+    set({
+      vault: info,
+      panes: [newPane()],
+      contents: {},
+      savedContents: {},
+      dirty: {},
+      externalRevision: {},
+      conflicts: {},
+      index: EMPTY_INDEX,
+      tree: [],
+      files: [],
+      sync: { status: null, busy: false, lastSync: null, message: null }
+    })
+    await get().boot()
+    await get().refreshGit()
+    get().toast(result.message, 'success')
+  },
+
+  async addUser() {
+    get().showModal({
+      type: 'prompt',
+      title: 'New user vault',
+      label: 'Creates a local vault and a private repo named slate-vault-user-<name>',
+      value: '',
+      placeholder: 'e.g. Alex',
+      submitLabel: 'Create vault',
+      onSubmit: async (value) => {
+        get().hideModal()
+        await get().switchUser(value)
+      }
+    })
   }
 }))
 

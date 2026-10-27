@@ -108,10 +108,31 @@ export interface SyncSettings {
   remote: string | null
 }
 
+export interface UserProfileSettings {
+  /** Active user of this vault. */
+  name: string
+  /** userName -> local vault folder. */
+  vaults: Record<string, string>
+  /** userName -> open tabs and panes for that vault. */
+  workspaces: Record<string, WorkspaceState>
+  /** Repository naming convention, e.g. "slate-vault-user-". */
+  repoPrefix: string
+}
+
+export interface UserProvisionResult {
+  ok: boolean
+  status: 'opened' | 'cloned' | 'created' | 'error'
+  message: string
+  userName: string
+  repoName: string
+  path?: string
+}
+
 export interface AppSettings {
   version: number
   vaultPath: string | null
   recentVaults: string[]
+  profile: UserProfileSettings
   theme: ThemeSettings
   editor: EditorSettings
   dailyNotes: DailyNotesSettings
@@ -216,6 +237,11 @@ export interface SlateApi {
     openPath(path: string): Promise<void>
     showItemInFolder(path: string): Promise<void>
     trash(path: string): Promise<void>
+  }
+  users: {
+    provision(name: string, preferredPath?: string): Promise<UserProvisionResult>
+    defaultPath(name: string): Promise<string>
+    repoName(name: string): string
   }
   files: {
     /** Resolve the absolute path of a dropped File (Electron webUtils). */

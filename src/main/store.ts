@@ -10,6 +10,12 @@ export function defaultSettings(): AppSettings {
     version: SETTINGS_VERSION,
     vaultPath: null,
     recentVaults: [],
+    profile: {
+      name: 'Peter',
+      vaults: {},
+      workspaces: {},
+      repoPrefix: 'slate-vault-user-'
+    },
     theme: {
       mode: 'system',
       accent: '#7c6cf0',
@@ -66,7 +72,8 @@ export function defaultSettings(): AppSettings {
 
 /** Deep merge plain objects so newly added settings keys get defaults. */
 function merge<T>(base: T, patch: unknown): T {
-  if (patch === null || patch === undefined) return base
+  if (patch === undefined) return base
+  if (patch === null) return null as T
   if (Array.isArray(base) || typeof base !== 'object') return patch as T
   if (typeof patch !== 'object') return base
   const out: Record<string, unknown> = { ...(base as Record<string, unknown>) }

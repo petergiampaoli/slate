@@ -10,6 +10,7 @@ export function StatusBar(): React.JSX.Element {
   const sync = useStore((s) => s.sync)
   const backlinks = useStore((s) => (path ? s.index.backlinks[path]?.length ?? 0 : 0))
   const vaultName = useStore((s) => s.vault?.name ?? '')
+  const userName = useStore((s) => s.settings.profile.name)
   const dirty = useStore((s) => (path ? Boolean(s.dirty[path]) : false))
 
   const words = useMemo(() => wordCount(content), [content])
@@ -77,6 +78,9 @@ export function StatusBar(): React.JSX.Element {
           </button>
         </>
       )}
+      <span className="status-item" style={{ opacity: 0.7 }} title="Current user">
+        {userName}
+      </span>
       <span className="status-item" style={{ opacity: 0.7 }}>
         {vaultName}
       </span>

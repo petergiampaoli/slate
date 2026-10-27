@@ -23,6 +23,7 @@ import {
 import type { GitStatus } from '@shared/types'
 import { api, useStore } from '../state/store'
 import { cn, relativeTime } from '../lib/utils'
+import { repoNameFor } from '@shared/naming'
 import { HOTKEYS } from './hotkeys'
 import { useContextMenu } from './ContextMenu'
 
@@ -127,7 +128,48 @@ function GeneralSection(): React.JSX.Element {
 
   return (
     <>
-      <Heading title="General" desc="How Slate stores your vault and opens new notes." />
+      <Heading title="General" desc="How Slate stores your vault, who is signed in, and where new notes go." />
+
+      <Row name="User" help={`Notes sync to the private repo ${repoNameFor(settings.profile.name)}`}>
+        <span className="prop-chip">{settings.profile.name}</span>
+        <button
+          className="btn"
+          onClick={() =>
+            useStore.getState().showModal({
+              type: 'prompt',
+              title: 'Switch user vault',
+              label: `Signed in as ${settings.profile.name}. Enter another user to open or create their private vault.`,
+              value: settings.profile.name,
+              placeholder: 'User name',
+              submitLabel: 'Switch',
+              onSubmit: async (value) => {
+                useStore.getState().hideModal()
+                await useStore.getState().switchUser(value)
+              }
+            })
+          }
+        >
+          Switch user…
+        </button>
+      </Row>
+      <Row name="User vaults" help="Each user gets a separate vault folder and private GitHub repo.">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+          {Object.entries(settings.profile.vaults).map(([name, path]) => (
+            <button
+              key={name}
+              className={cn('btn sm', name === settings.profile.name && 'primary')}
+              title={path}
+              onClick={() => void useStore.getState().switchUser(name)}
+            >
+              {name}
+            </button>
+          ))}
+          <button className="btn sm" onClick={() => void useStore.getState().addUser()}>
+            + New user vault
+          </button>
+        </div>
+      </Row>
+
       <Row name="Vault folder" help={vault?.path}>
         <button className="btn" onClick={() => void useStore.getState().chooseVault()}>
           <FolderOpen size={13} /> Change…
@@ -393,7 +435,7 @@ function SyncSection(): React.JSX.Element {
   const settings = useStore((s) => s.settings)
   const [status, setStatus] = useState<GitStatus | null>(null)
   const [busy, setBusy] = useState(false)
-  const [repoName, setRepoName] = useState('slate-vault')
+  const [repoName, setRepoName] = useState(() => repoNameFor(useStore.getState().settings.profile.name))
   const [remoteUrl, setRemoteUrl] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const vault = useStore((s) => s.vault)
@@ -411,6 +453,10 @@ function SyncSection(): React.JSX.Element {
   useEffect(() => {
     void refresh()
   }, [])
+
+  useEffect(() => {
+    setRepoName(repoNameFor(settings.profile.name))
+  }, [settings.profile.name])
 
   const run = async (fn: () => Promise<{ ok: boolean; message: string } | void>): Promise<void> => {
     setBusy(true)
