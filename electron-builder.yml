@@ -1,0 +1,55 @@
+appId: com.slate.app
+productName: Slate
+copyright: Copyright © 2026 Slate
+
+directories:
+  buildResources: build
+  output: release
+
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+  - '!node_modules/**'
+
+asar: true
+asarUnpack:
+  - resources/**
+
+mac:
+  category: public.app-category.productivity
+  icon: build/icon.icns
+  darkModeSupport: true
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  identity: null
+  target:
+    - target: dmg
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
+  extendInfo:
+    NSDocumentsFolderUsageDescription: Slate stores your notes in a folder you choose.
+    NSDesktopFolderUsageDescription: Slate syncs the vault folder you choose with GitHub.
+    NSDownloadsFolderUsageDescription: Slate can import attachments from your Downloads folder.
+    NSHumanReadableCopyright: Copyright © 2026 Slate
+
+dmg:
+  title: Slate ${version}
+  icon: build/icon.icns
+  iconSize: 96
+  contents:
+    - x: 140
+      y: 200
+      type: file
+    - x: 400
+      y: 200
+      type: link
+      path: /Applications
+  window:
+    width: 540
+    height: 380
+
+npmRebuild: false
