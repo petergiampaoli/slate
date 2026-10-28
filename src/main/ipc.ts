@@ -199,6 +199,13 @@ export function registerIpc(): void {
     return { ok: true, path: result.filePath }
   })
 
+  ipcMain.handle('export:svg', async (_e, svg: string, name: string) => {
+    const result = await dialog.showSaveDialog({ defaultPath: `${name}.svg`, filters: [{ name: 'SVG image', extensions: ['svg'] }] })
+    if (result.canceled || !result.filePath) return { ok: false }
+    await fs.writeFile(result.filePath, svg, 'utf8')
+    return { ok: true, path: result.filePath }
+  })
+
   ipcMain.handle('export:markdown', async (_e, content: string, name: string) => {
     const result = await dialog.showSaveDialog({ defaultPath: `${name}.md`, filters: [{ name: 'Markdown', extensions: ['md'] }] })
     if (result.canceled || !result.filePath) return { ok: false }

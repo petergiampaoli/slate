@@ -155,7 +155,13 @@ export function EditorPane({ tab, paneId, active }: Props): React.JSX.Element {
               ))}
             </>
           ) : null}
-          <span className="crumb current">{basename(path).replace(/\.[^.]+$/, '')}</span>
+          <button
+            className="crumb current"
+            title="Rename note — the title heading and file name stay in sync"
+            onClick={() => void useStore.getState().renamePath(path)}
+          >
+            {basename(path).replace(/\.[^.]+$/, '')}
+          </button>
         </div>
 
         <div className="sidebar-actions" style={{ opacity: 1 }}>

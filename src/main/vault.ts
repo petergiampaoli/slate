@@ -133,11 +133,14 @@ class VaultService {
           const children = await walk(path.join(dir, entry.name), childRel)
           nodes.push({ name: entry.name, path: childRel, kind: 'folder', children })
         } else if (entry.isFile()) {
+          const stat = await fsp.stat(path.join(dir, entry.name)).catch(() => null)
           nodes.push({
             name: entry.name,
             path: childRel,
             kind: 'file',
-            ext: path.extname(entry.name).slice(1).toLowerCase()
+            ext: path.extname(entry.name).slice(1).toLowerCase(),
+            mtime: stat?.mtimeMs ?? 0,
+            size: stat?.size ?? 0
           })
         }
       }

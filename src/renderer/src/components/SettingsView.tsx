@@ -664,7 +664,7 @@ function AboutSection(): React.JSX.Element {
           S
         </div>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>Slate 1.0.0</div>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>Slate {window.slate.appVersion}</div>
           <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>Electron · React · CodeMirror 6</div>
         </div>
       </div>

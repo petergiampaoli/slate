@@ -162,7 +162,7 @@ export interface AppSettings {
 
 export interface TabState {
   id: string
-  kind: 'note' | 'graph' | 'canvas' | 'settings' | 'search' | 'sync'
+  kind: 'note' | 'graph' | 'canvas' | 'settings' | 'search' | 'sync' | 'studio'
   path?: string
   title: string
   mode?: 'live' | 'source' | 'reading'
@@ -262,6 +262,7 @@ export interface SlateApi {
     pdf(html: string, name: string): Promise<{ ok: boolean; path?: string }>
     html(html: string, name: string): Promise<{ ok: boolean; path?: string }>
     markdown(content: string, name: string): Promise<{ ok: boolean; path?: string }>
+    svg(svg: string, name: string): Promise<{ ok: boolean; path?: string }>
   }
   menu: {
     onAction(cb: (action: string, payload?: unknown) => void): () => void

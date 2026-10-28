@@ -534,6 +534,17 @@ a {
 
 .breadcrumb .crumb.current {
   color: var(--text-secondary);
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: text;
+  border-radius: 3px;
+}
+
+.breadcrumb .crumb.current:hover {
+  color: var(--text);
+  background: var(--bg-hover);
 }
 
 .breadcrumb .sep {
@@ -645,6 +656,17 @@ a {
 .tree-row.active {
   background: var(--bg-accent-soft);
   color: var(--text);
+}
+
+.tree-row.selected-folder {
+  background: var(--bg-accent-soft);
+  color: var(--text);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.tree-row.selected-folder .tree-icon {
+  color: var(--accent);
+  opacity: 1;
 }
 
 .tree-row.drop-target {

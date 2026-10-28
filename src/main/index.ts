@@ -18,7 +18,7 @@ app.setName('Slate')
 app.setAboutPanelOptions({
   applicationName: 'Slate',
   applicationVersion: app.getVersion(),
-  version: '1.0.0',
+  version: app.getVersion(),
   copyright: 'A local-first Markdown knowledge base. Notes are plain files, synced with git.'
 })
 
@@ -92,6 +92,9 @@ function createWindow(): BrowserWindow {
 app.whenReady().then(async () => {
   nativeTheme.themeSource = 'system'
   registerIpc()
+  ipcMain.on('app:version', (event) => {
+    event.returnValue = app.getVersion()
+  })
   ipcMain.handle('window:new', () => {
     createWindow()
   })

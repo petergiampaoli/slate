@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  BarChart3,
   Bold,
   Bookmark,
   Calendar,
@@ -188,6 +189,26 @@ export function buildCommands(): Command[] {
       run: () => s.openSpecial('graph')
     },
     {
+      id: 'studio',
+      label: 'Open Studio',
+      icon: BarChart3,
+      detail: 'Project dashboards, word maps and theme trackers',
+      group: 'Navigate',
+      run: () => s.openSpecial('studio')
+    },
+    {
+      id: 'studio-folder',
+      label: 'Open Studio for current folder',
+      icon: BarChart3,
+      group: 'Navigate',
+      run: () => {
+        const path = s.notePath()
+        const folder = path ? dirname(path) : ''
+        s.setStudioScope(folder)
+        s.openSpecial('studio')
+      }
+    },
+    {
       id: 'local-graph',
       label: 'Open local graph',
       icon: ListTree,
@@ -349,6 +370,14 @@ export function buildCommands(): Command[] {
           editorCommand('insert-text', `![[${basename(saved)}]]`)
         }
       }
+    },
+    {
+      id: 'add-titles',
+      label: 'Add title headings to all notes',
+      icon: FilePlus,
+      detail: 'Normalise notes that have no # heading',
+      group: 'File',
+      run: () => void s.addTitlesToVault()
     },
     {
       id: 'insert-template',

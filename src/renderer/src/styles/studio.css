@@ -1,0 +1,475 @@
+/* ============================================================
+   Slate — Studio (project visualizations)
+   ============================================================ */
+
+.studio {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 22px 26px 80px;
+  background: var(--bg-surface);
+}
+
+.studio-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding-bottom: 16px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.studio-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.studio-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+
+.studio-title-row h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.studio-heading p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.studio-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.studio-scope {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 4px 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-inset);
+  color: var(--text-muted);
+}
+
+.studio-scope select {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  max-width: 190px;
+  height: 26px;
+}
+
+.studio-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-faint);
+  margin: 4px 2px 12px;
+}
+
+.studio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.studio-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.14s var(--ease), box-shadow 0.14s var(--ease);
+}
+
+.studio-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+
+.studio-card.span-2 {
+  grid-column: span 2;
+}
+
+.studio-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 14px 6px;
+}
+
+.studio-card-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.studio-card-titles h3 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.studio-card-titles p {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.studio-card-actions {
+  display: flex;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 0.12s var(--ease);
+}
+
+.studio-card:hover .studio-card-actions {
+  opacity: 1;
+}
+
+.studio-card-body {
+  padding: 2px 14px 8px;
+  min-height: 80px;
+}
+
+.studio-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 9px;
+  border-top: 1px solid var(--border);
+  font-size: 10.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.studio-card-foot > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.studio-chart-svg {
+  font-family: var(--font-ui);
+  user-select: none;
+}
+
+.studio-empty-chart {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  color: var(--text-faint);
+  font-size: 12px;
+  text-align: center;
+  padding: 24px;
+}
+
+.studio-empty {
+  grid-column: span 2;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+/* ---------- first-run / templates ---------- */
+
+.studio-start {
+  max-width: 860px;
+  margin: 8vh auto 0;
+}
+
+.studio-start-head {
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.studio-start-head h3 {
+  font-size: 19px;
+  color: var(--text);
+  margin: 12px 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.studio-start-head p {
+  font-size: 12.5px;
+  line-height: 1.65;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.studio-templates {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.studio-template {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  transition: border-color 0.12s var(--ease), transform 0.12s var(--ease);
+}
+
+.studio-template:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.studio-template .ico {
+  color: var(--accent);
+  margin-top: 1px;
+}
+
+.studio-template .t {
+  font-size: 12.5px;
+  font-weight: 550;
+  margin-bottom: 3px;
+}
+
+.studio-template .d {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* ---------- card editor ---------- */
+
+.studio-editor {
+  width: min(1020px, calc(100vw - 60px));
+  max-height: 88vh;
+  margin-top: 6vh;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: pop-in 0.16s var(--ease);
+}
+
+.studio-editor-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.studio-editor-head h3 {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.studio-editor-head p {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.studio-editor-body {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.studio-editor-form {
+  padding: 16px 20px 24px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+
+.field > span {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 550;
+}
+
+.field .text-input,
+.field .select-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.field-row .field {
+  margin-bottom: 12px;
+}
+
+.checkbox-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  margin-top: 20px;
+}
+
+.checkbox-field input {
+  accent-color: var(--accent);
+}
+
+.checkbox-field > span {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.field-help {
+  margin: -4px 0 12px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.studio-editor-preview {
+  padding: 16px 18px;
+  overflow-y: auto;
+  background: var(--bg-inset);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.studio-preview-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+
+.studio-preview-frame {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.studio-preview-meta {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+.studio-editor-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- themes ---------- */
+
+.studio-themes {
+  width: min(720px, calc(100vw - 60px));
+}
+
+.theme-list {
+  max-height: 46vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.theme-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.theme-color {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  padding: 0;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.theme-name {
+  width: 170px;
+  min-width: 0;
+  flex: 0 0 170px;
+}
+
+.theme-keywords {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- misc ---------- */
+
+.spinning {
+  animation: spin 0.9s linear infinite;
+}
+
+@media (max-width: 1080px) {
+  .studio-grid {
+    grid-template-columns: 1fr;
+  }
+  .studio-card.span-2 {
+    grid-column: span 1;
+  }
+  .studio-templates {
+    grid-template-columns: 1fr;
+  }
+  .studio-editor-body {
+    grid-template-columns: 1fr;
+  }
+  .studio-editor-form {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}

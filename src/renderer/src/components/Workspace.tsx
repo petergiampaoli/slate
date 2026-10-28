@@ -5,6 +5,7 @@ import { GraphView } from './graph/GraphView'
 import { CanvasView } from './canvas/CanvasView'
 import { SettingsView } from './SettingsView'
 import { SearchPage } from './SearchPage'
+import { StudioView } from './studio/StudioView'
 import { Welcome } from './Welcome'
 import type { TabState } from '@shared/types'
 
@@ -50,6 +51,8 @@ function TabContent({ tab, paneId, active }: { tab: TabState; paneId: string; ac
       return <SettingsView embedded />
     case 'search':
       return <SearchPage />
+    case 'studio':
+      return <StudioView />
     default:
       return <Welcome />
   }

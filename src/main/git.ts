@@ -70,7 +70,7 @@ class GitService {
     await this.git(['config', 'user.name', 'Slate'])
     await this.git(['config', 'user.email', 'slate@localhost'])
     const ignore = path.join(this.root, '.gitignore')
-    if (!fs.existsSync(ignore)) fs.writeFileSync(ignore, '.DS_Store\n.slate/\n', 'utf8')
+    if (!fs.existsSync(ignore)) fs.writeFileSync(ignore, '.DS_Store\n', 'utf8')
   }
 
   private async remote(): Promise<string | null> {

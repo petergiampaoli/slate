@@ -382,7 +382,8 @@ export function normalizeStringList(value: unknown): string[] {
 export async function buildVaultIndex(
   files: string[],
   read: (path: string) => Promise<string>,
-  onProgress?: (done: number, total: number) => void
+  onProgress?: (done: number, total: number) => void,
+  stats?: Record<string, { mtime: number; size: number }>
 ): Promise<VaultIndex> {
   const noteFiles = files.filter((f) => isNote(f))
   const notes: Record<string, NoteMeta> = {}
@@ -410,12 +411,12 @@ export async function buildVaultIndex(
             headings: [],
             words: 0,
             excerpt: 'Canvas',
-            mtime: 0,
+            mtime: stats?.[file]?.mtime ?? 0,
             size: text.length
           }
         } else if (isMarkdown(file)) {
           const text = await read(file)
-          notes[file] = noteMetaFromText(file, text)
+          notes[file] = noteMetaFromText(file, text, stats?.[file] ?? { mtime: 0, size: text.length })
         }
       } catch (err) {
         console.warn('[slate] could not index', file, err)

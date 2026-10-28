@@ -17,6 +17,13 @@ import {
   type VaultIndex
 } from '../lib/indexer'
 import {
+  extractTitle,
+  isTitleManaged,
+  sanitizeTitle,
+  setNoteTitle,
+  titleFromPath
+} from '../lib/titles'
+import {
   basename,
   clamp,
   dirname,
@@ -117,10 +124,17 @@ interface AppState {
   toasts: Toast[]
   searchQuery: string
   searchToken: number
+  selectedFolder: string | null
+  studioScope: string
+  fileStats: Record<string, { mtime: number; size: number }>
   sync: SyncState
   historyVersion: number
   multiSelect: string[]
   setMultiSelect: (paths: string[]) => void
+  setSelectedFolder: (path: string | null) => void
+  setStudioScope: (scope: string) => void
+  syncTitleFor: (path: string) => Promise<void>
+  addTitlesToVault: () => Promise<void>
 
   init: () => Promise<void>
   boot: () => Promise<void>
@@ -144,7 +158,7 @@ interface AppState {
   notePath: () => string | null
   setActivePane: (paneId: string) => void
   openNote: (path: string, opts?: { newTab?: boolean; paneId?: string; history?: boolean; mode?: TabState['mode'] }) => Promise<void>
-  openSpecial: (kind: 'graph' | 'canvas' | 'settings' | 'search', opts?: { path?: string }) => void
+  openSpecial: (kind: 'graph' | 'canvas' | 'settings' | 'search' | 'studio', opts?: { path?: string }) => void
   closeTab: (paneId: string, tabId: string) => void
   closeActiveTab: () => void
   activateTab: (paneId: string, tabId: string) => void
@@ -207,6 +221,9 @@ interface AppState {
 
 const saveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 let reindexTimer: ReturnType<typeof setTimeout> | null = null
+let titleTimer: ReturnType<typeof setTimeout> | null = null
+const titleSyncFailed: Record<string, string> = {}
+const loadedTitles: Record<string, string | null> = {}
 let workspaceTimer: ReturnType<typeof setTimeout> | null = null
 
 export function flattenTree(nodes: FileNode[]): FileNode[] {
@@ -218,6 +235,14 @@ export function flattenTree(nodes: FileNode[]): FileNode[] {
     }
   }
   walk(nodes)
+  return out
+}
+
+export function statsFromTree(tree: FileNode[]): Record<string, { mtime: number; size: number }> {
+  const out: Record<string, { mtime: number; size: number }> = {}
+  for (const node of flattenTree(tree)) {
+    if (node.kind === 'file') out[node.path] = { mtime: node.mtime ?? 0, size: node.size ?? 0 }
+  }
   return out
 }
 
@@ -288,10 +313,15 @@ export const useStore = create<AppState>((set, get) => ({
   toasts: [],
   searchQuery: '',
   searchToken: 0,
+  selectedFolder: null,
+  studioScope: '',
+  fileStats: {},
   sync: { status: null, busy: false, lastSync: null, message: null },
   historyVersion: 0,
   multiSelect: [],
   setMultiSelect: (paths) => set({ multiSelect: paths }),
+  setSelectedFolder: (path) => set({ selectedFolder: path }),
+  setStudioScope: (scope) => set({ studioScope: scope }),
 
   async init() {
     const settings = await api.settings.get()
@@ -339,10 +369,16 @@ export const useStore = create<AppState>((set, get) => ({
     set({ bootPhase: 'Reading vault', bootProgress: 5 })
     const tree = await api.vault.tree()
     const files = flattenTree(tree).filter((n) => n.kind === 'file').map((n) => n.path)
-    set({ tree, files })
-    const index = await buildVaultIndex(files, (p) => api.fs.read(p), (done, total) => {
-      set({ bootProgress: Math.round((done / Math.max(1, total)) * 100), bootPhase: `Indexing ${done}/${total}` })
-    })
+    const fileStats = statsFromTree(tree)
+    set({ tree, files, fileStats })
+    const index = await buildVaultIndex(
+      files,
+      (p) => api.fs.read(p),
+      (done, total) => {
+        set({ bootProgress: Math.round((done / Math.max(1, total)) * 100), bootPhase: `Indexing ${done}/${total}` })
+      },
+      fileStats
+    )
     set({ index, ready: true, bootPhase: 'Ready', bootProgress: 100 })
 
     const expanded: Record<string, boolean> = {}
@@ -357,11 +393,12 @@ export const useStore = create<AppState>((set, get) => ({
     if (!get().vault) return
     const tree = await api.vault.tree()
     const files = flattenTree(tree).filter((n) => n.kind === 'file').map((n) => n.path)
+    const fileStats = statsFromTree(tree)
     if (full) {
-      const index = await buildVaultIndex(files, (p) => api.fs.read(p))
-      set({ tree, files, index })
+      const index = await buildVaultIndex(files, (p) => api.fs.read(p), undefined, fileStats)
+      set({ tree, files, fileStats, index })
     } else {
-      set({ tree, files })
+      set({ tree, files, fileStats })
     }
   },
 
@@ -370,6 +407,7 @@ export const useStore = create<AppState>((set, get) => ({
     if (!state.vault) return
     const tree = await api.vault.tree()
     const files = flattenTree(tree).filter((n) => n.kind === 'file').map((n) => n.path)
+    const fileStats = statsFromTree(tree)
     const notes = { ...state.index.notes }
     const contents = { ...state.contents }
     const saved = { ...state.savedContents }
@@ -398,7 +436,8 @@ export const useStore = create<AppState>((set, get) => ({
           changed = true
           continue
         }
-        notes[path] = noteMetaFromText(path, text)
+        notes[path] = noteMetaFromText(path, text, fileStats[path])
+        loadedTitles[path] = extractTitle(text)
         contents[path] = text
         saved[path] = text
         externalRevision[path] = (externalRevision[path] ?? 0) + 1
@@ -411,9 +450,9 @@ export const useStore = create<AppState>((set, get) => ({
     if (changed) {
       const index: VaultIndex = { ...state.index, notes }
       linkIndex(index)
-      set({ tree, files, index, contents, savedContents: saved, dirty, conflicts, externalRevision })
+      set({ tree, files, fileStats, index, contents, savedContents: saved, dirty, conflicts, externalRevision })
     } else {
-      set({ tree, files })
+      set({ tree, files, fileStats })
     }
   },
 
@@ -576,6 +615,28 @@ export const useStore = create<AppState>((set, get) => ({
     if (!get().contents[path]) {
       await get().loadContent(path)
     }
+    if (isMarkdown(path) && isTitleManaged(path, state.settings)) {
+      const text = get().contents[path] ?? ''
+      if (!extractTitle(text)) {
+        const updated = setNoteTitle(text, titleFromPath(path))
+        try {
+          await api.fs.write(path, updated)
+          loadedTitles[path] = titleFromPath(path)
+          set((s) => ({
+            contents: { ...s.contents, [path]: updated },
+            savedContents: { ...s.savedContents, [path]: updated },
+            dirty: { ...s.dirty, [path]: false }
+          }))
+          const idx = { ...get().index, notes: { ...get().index.notes, [path]: noteMetaFromText(path, updated, get().fileStats[path]) } }
+          linkIndex(idx)
+          set({ index: idx })
+        } catch {
+          /* title normalisation is best effort */
+        }
+      } else {
+        loadedTitles[path] = extractTitle(text)
+      }
+    }
 
     const tab = emptyTab('note', stripExt(basename(path)), path)
     if (opts.mode) tab.mode = opts.mode
@@ -594,11 +655,13 @@ export const useStore = create<AppState>((set, get) => ({
     const state = get()
     const paneId = state.activePaneId
     const pane = state.panes.find((p) => p.id === paneId) ?? state.panes[0]
+    if (kind === 'studio' && opts.path !== undefined) set({ studioScope: opts.path })
     const titles: Record<string, string> = {
       graph: 'Graph view',
       canvas: stripExt(basename(opts.path ?? 'Canvas')),
       settings: 'Settings',
-      search: 'Search'
+      search: 'Search',
+      studio: 'Studio'
     }
     const existing = pane.tabs.find(
       (t) => t.kind === kind && (kind !== 'canvas' || t.path === opts.path)
@@ -720,6 +783,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
     try {
       const text = await api.fs.read(path)
+      loadedTitles[path] = extractTitle(text)
       set((s) => ({
         contents: { ...s.contents, [path]: text },
         savedContents: { ...s.savedContents, [path]: text }
@@ -741,7 +805,7 @@ export const useStore = create<AppState>((set, get) => ({
       contents: { ...s.contents, [path]: content },
       dirty: { ...s.dirty, [path]: isDirty }
     }))
-    const meta = noteMetaFromText(path, content)
+    const meta = noteMetaFromText(path, content, state.fileStats[path])
     const index = { ...state.index, notes: { ...state.index.notes, [path]: meta } }
     set({ index })
     if (reindexTimer) clearTimeout(reindexTimer)
@@ -760,6 +824,18 @@ export const useStore = create<AppState>((set, get) => ({
         get().saveNote(path)
       }, 700)
     )
+
+    if (isMarkdown(path) && isTitleManaged(path, get().settings)) {
+      const currentTitle = extractTitle(content)
+      if (loadedTitles[path] === undefined) loadedTitles[path] = currentTitle
+      if (currentTitle !== loadedTitles[path]) {
+        if (titleTimer) clearTimeout(titleTimer)
+        titleTimer = setTimeout(() => {
+          titleTimer = null
+          void get().syncTitleFor(path)
+        }, 1500)
+      }
+    }
   },
 
   async saveNote(path) {
@@ -775,7 +851,7 @@ export const useStore = create<AppState>((set, get) => ({
         dirty: { ...s.dirty, [target]: false },
         conflicts: { ...s.conflicts, [target]: false }
       }))
-      const meta = noteMetaFromText(target, content)
+      const meta = noteMetaFromText(target, content, get().fileStats[target])
       const index = { ...get().index, notes: { ...get().index.notes, [target]: meta } }
       linkIndex(index)
       set({ index })
@@ -798,7 +874,7 @@ export const useStore = create<AppState>((set, get) => ({
       conflicts: { ...s.conflicts, [path]: false },
       externalRevision: { ...s.externalRevision, [path]: (s.externalRevision[path] ?? 0) + 1 }
     }))
-    const index = { ...get().index, notes: { ...get().index.notes, [path]: noteMetaFromText(path, text) } }
+    const index = { ...get().index, notes: { ...get().index.notes, [path]: noteMetaFromText(path, text, get().fileStats[path]) } }
     linkIndex(index)
     set({ index })
   },
@@ -808,7 +884,9 @@ export const useStore = create<AppState>((set, get) => ({
     if (!state.vault) return null
     let folder = opts.folder ?? ''
     if (!opts.folder) {
-      if (state.settings.newNoteLocation === 'current') {
+      if (state.selectedFolder !== null) {
+        folder = state.selectedFolder
+      } else if (state.settings.newNoteLocation === 'current') {
         const current = state.notePath()
         folder = current ? dirname(current) : ''
       } else if (state.settings.newNoteLocation === 'folder') {
@@ -821,11 +899,14 @@ export const useStore = create<AppState>((set, get) => ({
     while (state.files.includes(path)) {
       path = joinPath(folder, `${baseName} ${i++}.md`)
     }
-    await api.fs.create(path, opts.content ?? '')
+    const content = opts.content ?? `# ${stripExt(basename(path))}\n\n`
+    loadedTitles[path] = extractTitle(content)
+    await api.fs.create(path, content)
     await get().refreshVault()
+    if (folder) set((s) => ({ expandedFolders: { ...s.expandedFolders, [folder]: true } }))
     set((s) => ({
-      contents: { ...s.contents, [path]: opts.content ?? '' },
-      savedContents: { ...s.savedContents, [path]: opts.content ?? '' }
+      contents: { ...s.contents, [path]: content },
+      savedContents: { ...s.savedContents, [path]: content }
     }))
     if (opts.open !== false) {
       await get().openNote(path, { newTab: opts.newTab })
@@ -862,7 +943,112 @@ export const useStore = create<AppState>((set, get) => ({
     })
   },
 
+  async addTitlesToVault() {
+    const state = get()
+    const targets = state.files.filter(
+      (file) => isMarkdown(file) && isTitleManaged(file, state.settings) && extractTitle(state.contents[file] ?? '') === null
+    )
+    if (!targets.length) {
+      state.toast('Every note already has a title heading.', 'info')
+      return
+    }
+    state.showModal({
+      type: 'confirm',
+      title: `Add a title to ${targets.length} note${targets.length === 1 ? '' : 's'}?`,
+      message: 'Notes without a heading get “# File name” at the top. Daily notes and templates are left alone.',
+      confirmLabel: 'Add titles',
+      onConfirm: async () => {
+        let updated = 0
+        for (const file of targets) {
+          try {
+            const text = get().contents[file] ?? (await api.fs.read(file))
+            if (extractTitle(text)) continue
+            const next = setNoteTitle(text, titleFromPath(file))
+            await api.fs.write(file, next)
+            loadedTitles[file] = titleFromPath(file)
+            set((s) => ({
+              contents: { ...s.contents, [file]: next },
+              savedContents: { ...s.savedContents, [file]: next }
+            }))
+            updated++
+          } catch {
+            /* skip unreadable files */
+          }
+        }
+        get().hideModal()
+        await get().refreshVault(true)
+        get().toast(`Added titles to ${updated} note${updated === 1 ? '' : 's'}`, 'success')
+      }
+    })
+  },
+
+  async syncTitleFor(path) {
+    const state = get()
+    if (!isMarkdown(path) || !isTitleManaged(path, state.settings)) return
+    const content = state.contents[path]
+    if (content === undefined) return
+    const title = extractTitle(content)
+    if (!title) return
+    if (loadedTitles[path] === undefined) loadedTitles[path] = title
+    if (title === loadedTitles[path] && title !== titleFromPath(path)) return
+    const current = titleFromPath(path)
+    if (title === current) {
+      loadedTitles[path] = title
+      return
+    }
+    const safe = sanitizeTitle(title)
+    if (!safe || safe === current) return
+    const target = joinPath(dirname(path), `${safe}.md`)
+    if (target === path) return
+    if (state.files.includes(target)) {
+      if (titleSyncFailed[path] !== title) {
+        titleSyncFailed[path] = title
+        state.toast(`A note called “${safe}” already exists — the file was not renamed.`, 'error')
+      }
+      return
+    }
+    delete titleSyncFailed[path]
+    if (!(await api.fs.exists(path))) return
+    try {
+      await api.fs.rename(path, target)
+      const contents = { ...state.contents }
+      const text = contents[path]
+      delete contents[path]
+      contents[target] = text
+      const saved = { ...state.savedContents }
+      if (saved[path] !== undefined) {
+        saved[target] = saved[path]
+        delete saved[path]
+      }
+      const dirty = { ...state.dirty }
+      delete dirty[path]
+      const panes = state.panes.map((pane) => ({
+        ...pane,
+        tabs: pane.tabs.map((tab) => {
+          if (tab.path !== path) return tab
+          return {
+            ...tab,
+            path: target,
+            title: stripExt(basename(target)),
+            history: (tab.history ?? []).map((entry) => (entry === path ? target : entry))
+          }
+        })
+      }))
+      await get().refreshVault(true)
+      loadedTitles[target] = extractTitle(text)
+      delete loadedTitles[path]
+      set({ panes, contents, savedContents: saved, dirty })
+      get().toast(`Renamed note to “${stripExt(basename(target))}”`, 'success')
+    } catch (err) {
+      get().toast(`Could not rename note: ${String(err)}`, 'error')
+    }
+  },
+
   async renamePath(oldPath) {
+    if (titleTimer) {
+      clearTimeout(titleTimer)
+      titleTimer = null
+    }
     const state = get()
     const isFolder = !isNote(oldPath)
     const currentName = basename(oldPath)
@@ -904,6 +1090,23 @@ export const useStore = create<AppState>((set, get) => ({
           })
         }))
         set({ panes, contents: { ...contents, ...moved }, externalRevision: { ...s.externalRevision } })
+        if (!isFolder && isMarkdown(target) && isTitleManaged(target, s.settings)) {
+          try {
+            const current = moved[target] ?? (await api.fs.read(target))
+            const updated = setNoteTitle(current, stripExt(basename(target)))
+            if (updated !== current) {
+              await api.fs.write(target, updated)
+              loadedTitles[target] = stripExt(basename(target))
+              set((st) => ({
+                contents: { ...st.contents, [target]: updated },
+                savedContents: { ...st.savedContents, [target]: updated },
+                dirty: { ...st.dirty, [target]: false }
+              }))
+            }
+          } catch {
+            /* title update is best effort */
+          }
+        }
         await get().refreshVault(true)
         get().hideModal()
         get().toast(`Renamed to ${basename(target)}`, 'success')

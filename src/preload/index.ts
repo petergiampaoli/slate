@@ -10,7 +10,7 @@ function subscribe<T>(channel: string, cb: (payload: T) => void): () => void {
 
 const api: SlateApi = {
   platform: process.platform,
-  appVersion: process.env['npm_package_version'] ?? '1.0.0',
+  appVersion: ipcRenderer.sendSync('app:version') as string,
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
     set: (patch) => ipcRenderer.invoke('settings:set', patch),
@@ -84,7 +84,8 @@ const api: SlateApi = {
   export: {
     pdf: (html, name) => ipcRenderer.invoke('export:pdf', html, name),
     html: (html, name) => ipcRenderer.invoke('export:html', html, name),
-    markdown: (content, name) => ipcRenderer.invoke('export:markdown', content, name)
+    markdown: (content, name) => ipcRenderer.invoke('export:markdown', content, name),
+    svg: (svg, name) => ipcRenderer.invoke('export:svg', svg, name)
   },
   menu: {
     onAction: (cb) => {

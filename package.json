@@ -1,7 +1,7 @@
 {
   "name": "slate",
   "productName": "Slate",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A local-first markdown knowledge base for macOS, with the vault stored as plain text and synced to a private GitHub repository.",
   "main": "./out/main/index.js",
   "author": "Slate",

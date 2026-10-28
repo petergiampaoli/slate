@@ -11,6 +11,8 @@ Slate does not use a proprietary database. Notes are `.md` files, canvases are `
 ## Features
 
 ### Notes & editor
+- **Every note has a title heading.** The first `# Heading` is the note's name: renaming the file rewrites the heading, and editing the heading renames the file (after a short pause). Daily notes and templates are exempt so their date/placeholder headings survive. Use **Add title headings to all notes** from the palette to normalise an existing vault.
+- **New notes follow your selection.** Click a folder in the explorer and `⌘N` creates the note inside it; the folder is highlighted in the sidebar. Without a folder selected, the `New notes go to` setting applies.
 - **CodeMirror 6** editor with a custom **live preview** renderer: headings, bold/italic, `==highlights==`, inline code, task checkboxes, images, wiki links, embeds, callouts and fenced code are styled inline while raw Markdown appears when your cursor is on the line.
 - **Source** and **Reading** modes alongside live preview (`⌘E`).
 - **Wiki links** — `[[Note]]`, `[[Note|alias]]`, `[[Note#Heading]]`, embeds `![[Note]]` — with autocomplete when you type `[[`.
@@ -22,6 +24,7 @@ Slate does not use a proprietary database. Notes are `.md` files, canvases are `
 - **Code blocks** with syntax highlighting, **KaTeX math**, **Mermaid diagrams**, **GFM tables**, task lists, footnotes, and Obsidian **callouts** (`> [!tip]`).
 - **Attachments**: drag & drop or paste images, resolved by filename so notes survive moves.
 - **Canvas** — Obsidian-compatible `.canvas` files with text/note cards, groups, connections, drag, resize and zoom.
+- **Studio** — dashboards of word clouds, word maps, theme timelines, activity and directory charts, scoped to folders with filters and per-chart settings.
 - **Graph view** — force-directed global graph and a local 2-hop graph, colour-coded by folder, with search and pan/zoom.
 
 ### Navigation & workspace
@@ -32,6 +35,28 @@ Slate does not use a proprietary database. Notes are `.md` files, canvases are `
 - **Export** to PDF, HTML or Markdown; print-ready layout.
 - Native macOS menu bar, traffic-light window, dark/light/system themes and eight accent colours.
 - Custom CSS snippets, editor font/size/measure settings.
+
+### Studio — project visualizations
+
+![Studio](docs/screenshot-studio.png)
+
+Studio turns the vault into a set of dashboards for writers and creators. Visualizations are scoped to a project folder (with or without subfolders), filtered by tag, text or date range, and saved with the vault in `.slate/studio.json` so they sync with the notes.
+
+| Chart | What it answers |
+| --- | --- |
+| Project summary | How many notes, words, links and reading minutes? |
+| Writing activity | How much did I write each week/month? |
+| Word cloud | Which words do I lean on? |
+| Word map | Which words keep appearing together? |
+| Theme frequency | Which themes dominate the draft? |
+| Theme timeline | When does each theme appear or disappear? |
+| Tags / Folders | Where is the work concentrated? |
+
+Each card is a mini Datawrapper-style chart: editable title and subtitle, palette, time bucket, top-N limit and width. Cards can be exported as SVG. **Themes** are keyword groups you define (or seed from your tags), with a colour and any number of phrases; the heatmap tracks them across drafts.
+
+![Visualization editor](docs/screenshot-studio-editor.png)
+
+Open Studio from the ribbon, with `⌘P` → *Open Studio*, or right-click a folder → **Open Studio for this folder**. Three starter layouts build a dashboard in one click: *Writer's dashboard*, *Theme tracker* and *Project overview*.
 
 ### Storage & sync
 - The vault is a git repository. Sync = `fetch → pull --rebase --autostash → add → commit → push`.
@@ -153,6 +178,7 @@ slate/
 | Toggle source mode | `⌘⌥E` |
 | Daily note | `⌘⇧D` |
 | Graph view | `⌘G` |
+| Studio | `⌘P` → Open Studio |
 | Save | `⌘S` |
 | Sync now | `⌘⇧S` |
 | Bold / italic | `⌘B` / `⌘I` |

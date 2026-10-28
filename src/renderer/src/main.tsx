@@ -5,6 +5,7 @@ import './styles/app.css'
 import './styles/editor.css'
 import './styles/markdown.css'
 import './styles/canvas.css'
+import './styles/studio.css'
 
 const container = document.getElementById('root')
 if (!container) throw new Error('Root element missing')

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
+  BarChart3,
   ChevronRight,
   File,
   FileCode2,
@@ -35,6 +36,7 @@ export function FileExplorer(): React.JSX.Element {
   const tree = useStore((s) => s.tree)
   const expanded = useStore((s) => s.expandedFolders)
   const currentPath = useStore((s) => s.notePath())
+  const selectedFolder = useStore((s) => s.selectedFolder)
   const vault = useStore((s) => s.vault)
   const menu = useContextMenu()
   const [sort, setSort] = useState<SortMode>('name')
@@ -44,9 +46,11 @@ export function FileExplorer(): React.JSX.Element {
 
   const openFile = (node: FileNode, event: React.MouseEvent): void => {
     if (node.kind === 'folder') {
+      useStore.getState().setSelectedFolder(node.path)
       useStore.getState().toggleFolder(node.path)
       return
     }
+    useStore.getState().setSelectedFolder(null)
     if (isCanvas(node.path)) {
       useStore.getState().openSpecial('canvas', { path: node.path })
       return
@@ -69,6 +73,14 @@ export function FileExplorer(): React.JSX.Element {
               label: 'New folder inside',
               icon: FolderPlus,
               onSelect: () => void useStore.getState().createFolder(node.path)
+            },
+            {
+              label: 'Open Studio for this folder',
+              icon: BarChart3,
+              onSelect: () => {
+                useStore.getState().setStudioScope(node.path)
+                useStore.getState().openSpecial('studio')
+              }
             },
             { separator: true as const }
           ]
@@ -147,7 +159,11 @@ export function FileExplorer(): React.JSX.Element {
           <ChevronRight size={11} style={{ opacity: 0.6 }} />
         </button>
         <div className="sidebar-actions">
-          <button className="icon-btn" title="New note (⌘N)" onClick={() => void useStore.getState().createNote()}>
+          <button
+            className="icon-btn"
+            title={`New note in ${selectedFolder === null ? 'the current location' : selectedFolder || 'the vault root'}`}
+            onClick={() => void useStore.getState().createNote()}
+          >
             <FilePlus size={15} strokeWidth={1.8} />
           </button>
           <button className="icon-btn" title="New folder" onClick={() => void useStore.getState().createFolder()}>
@@ -203,6 +219,7 @@ export function FileExplorer(): React.JSX.Element {
               depth={0}
               expanded={expanded}
               currentPath={currentPath}
+              selectedFolder={selectedFolder}
               dragOver={dragOver}
               onOpen={openFile}
               onMenu={(e, n) => menu.open(e, fileMenu(n))}
@@ -229,6 +246,7 @@ interface RowProps {
   depth: number
   expanded: Record<string, boolean>
   currentPath: string | null
+  selectedFolder: string | null
   dragOver: string | null
   onOpen: (node: FileNode, event: React.MouseEvent) => void
   onMenu: (event: React.MouseEvent, node: FileNode) => void
@@ -240,7 +258,7 @@ interface RowProps {
 }
 
 function TreeRow(props: RowProps): React.JSX.Element {
-  const { node, depth, expanded, currentPath, dragOver } = props
+  const { node, depth, expanded, currentPath, selectedFolder, dragOver } = props
   const open = expanded[node.path] ?? false
   const selected = currentPath === node.path
   const isFolder = node.kind === 'folder'
@@ -253,6 +271,7 @@ function TreeRow(props: RowProps): React.JSX.Element {
         className={cn(
           'tree-row',
           selected && 'active',
+          isFolder && selectedFolder === node.path && 'selected-folder',
           dragOver === node.path && isFolder && 'drop-target'
         )}
         style={{ paddingLeft: 6 + depth * 13 }}

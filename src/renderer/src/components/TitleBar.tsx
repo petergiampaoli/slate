@@ -4,6 +4,7 @@ import {
   X,
   Plus,
   Network,
+  BarChart3,
   FileText,
   LayoutGrid,
   Settings,
@@ -195,6 +196,9 @@ export function Ribbon(): React.JSX.Element {
       </button>
       <button className="ribbon-btn" title="Graph view (⌘G)" onClick={() => useStore.getState().openSpecial('graph')}>
         <Network size={19} strokeWidth={1.6} />
+      </button>
+      <button className="ribbon-btn" title="Studio — project visualizations" onClick={() => useStore.getState().openSpecial('studio')}>
+        <BarChart3 size={19} strokeWidth={1.6} />
       </button>
       <button className="ribbon-btn" title="Random note" onClick={() => void useStore.getState().openRandom()}>
         <DiceIcon />
