@@ -41,6 +41,7 @@ export function buildMenu(): void {
       submenu: [
         { label: 'New Note', accelerator: 'Cmd+N', click: () => send('new-note') },
         { label: 'New Window', accelerator: 'Cmd+Shift+N', click: () => send('new-window') },
+        { label: 'Dictate Note', accelerator: 'Cmd+Shift+M', click: () => send('dictate') },
         { type: 'separator' },
         {
           label: 'Open Vault…',

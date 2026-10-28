@@ -5,6 +5,7 @@ import {
   Plus,
   Network,
   BarChart3,
+  Mic,
   FileText,
   LayoutGrid,
   Settings,
@@ -202,6 +203,13 @@ export function Ribbon(): React.JSX.Element {
       </button>
       <button className="ribbon-btn" title="Random note" onClick={() => void useStore.getState().openRandom()}>
         <DiceIcon />
+      </button>
+      <button
+        className="ribbon-btn"
+        title="Dictate a note (⌘⇧M)"
+        onClick={() => useStore.getState().showModal({ type: 'dictation' })}
+      >
+        <Mic size={19} strokeWidth={1.6} />
       </button>
       <div className="ribbon-spacer" />
       <button

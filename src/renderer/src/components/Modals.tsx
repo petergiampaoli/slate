@@ -17,6 +17,7 @@ import { buildCommands, type Command } from './commands'
 import { quickSwitcherItems, fuzzyFind } from '../lib/search'
 import { cn, dirname, relativeTime, stripExt } from '../lib/utils'
 import { HOTKEYS } from './hotkeys'
+import { DictationOverlay } from './dictation/DictationOverlay'
 
 export function ModalHost(): React.JSX.Element {
   const modal = useStore((s) => s.modal)
@@ -36,6 +37,8 @@ export function ModalHost(): React.JSX.Element {
       return <HistoryModal path={modal.path} />
     case 'shortcuts':
       return <ShortcutsModal />
+    case 'dictation':
+      return <DictationOverlay />
     case 'template-picker':
       return <TemplatePicker />
     default:

@@ -3,3 +3,5 @@ out/
 release/
 .DS_Store
 *.log
+resources/whisper/whisper-cli
+resources/whisper/*.bin

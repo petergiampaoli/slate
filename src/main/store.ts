@@ -10,6 +10,11 @@ export function defaultSettings(): AppSettings {
     version: SETTINGS_VERSION,
     vaultPath: null,
     recentVaults: [],
+    dictation: {
+      language: 'en',
+      keepAudio: true,
+      autoTitle: true
+    },
     profile: {
       name: 'Peter',
       vaults: {},

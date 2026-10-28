@@ -98,6 +98,9 @@ export default function App(): React.JSX.Element {
         case 'new-note':
           void s.createNote()
           break
+        case 'dictate':
+          s.showModal({ type: 'dictation' })
+          break
         case 'new-window':
           void slateApi.window.newWindow()
           break
@@ -259,7 +262,7 @@ export default function App(): React.JSX.Element {
     const onKeyDown = (event: KeyboardEvent): void => {
       const state = useStore.getState()
       if (event.key === 'Escape') {
-        if (state.modal) {
+        if (state.modal && state.modal.type !== 'dictation') {
           state.hideModal()
           event.preventDefault()
         }

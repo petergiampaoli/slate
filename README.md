@@ -25,6 +25,7 @@ Slate does not use a proprietary database. Notes are `.md` files, canvases are `
 - **Attachments**: drag & drop or paste images, resolved by filename so notes survive moves.
 - **Canvas** — Obsidian-compatible `.canvas` files with text/note cards, groups, connections, drag, resize and zoom.
 - **Studio** — dashboards of word clouds, word maps, theme timelines, activity and directory charts, scoped to folders with filters and per-chart settings.
+- **Offline dictation** — one click records, whisper.cpp transcribes on-device, and a titled note with the audio attached is created automatically.
 - **Graph view** — force-directed global graph and a local 2-hop graph, colour-coded by folder, with search and pan/zoom.
 
 ### Navigation & workspace
@@ -35,6 +36,26 @@ Slate does not use a proprietary database. Notes are `.md` files, canvases are `
 - **Export** to PDF, HTML or Markdown; print-ready layout.
 - Native macOS menu bar, traffic-light window, dark/light/system themes and eight accent colours.
 - Custom CSS snippets, editor font/size/measure settings.
+
+### Dictation
+
+![Dictation](docs/screenshot-dictation.png)
+
+Press **⌘⇧M**, click the microphone in the sidebar, or run *Dictate a note* from the command palette. Slate records the microphone, transcribes it **offline** with whisper.cpp, then creates a note for you:
+
+- The note is titled from what you said — recipe phrasing (“today I’m making…”), “how to make…”, discussion/theme phrasing, ingredient lists, or the first few words.
+- The transcript is formatted into paragraphs, with `source: dictation`, the timestamp, duration and audio reference in the frontmatter.
+- The WAV recording is attached to the note and playable in both live preview and reading view.
+- If recognition fails, the recording can still be saved as an audio note — nothing is lost.
+- Everything runs on this Mac. No audio leaves the machine and no API key is required.
+
+Dictation uses the bundled **Whisper base.en** model (about 140 MB) and the whisper.cpp engine. The binaries live in `resources/whisper` and are excluded from git; run:
+
+```bash
+npm run setup:whisper
+```
+
+once before building a distributable. The packaged DMG includes them (≈256 MB).
 
 ### Studio — project visualizations
 
@@ -72,7 +93,8 @@ Open Studio from the ribbon, with `⌘P` → *Open Studio*, or right-click a fol
 ```bash
 cd slate
 npm install
-npm run dev        # development, hot reload
+npm run setup:whisper   # build the offline speech engine + model (once)
+npm run dev             # development, hot reload
 ```
 
 Build a distributable **.app / .dmg**:
@@ -134,6 +156,8 @@ slate/
 ├── electron.vite.config.ts        # main / preload / renderer bundling
 ├── electron-builder.yml           # macOS packaging
 ├── build/                         # icon source + .icns
+├── resources/whisper/             # whisper.cpp + base.en model (not in git)
+├── scripts/setup-whisper.sh       # builds/downloads the dictation engine
 ├── src/
 │   ├── main/
 │   │   ├── index.ts               # app lifecycle, window, protocol, menus
@@ -179,6 +203,7 @@ slate/
 | Daily note | `⌘⇧D` |
 | Graph view | `⌘G` |
 | Studio | `⌘P` → Open Studio |
+| Dictate a note | `⌘⇧M` |
 | Save | `⌘S` |
 | Sync now | `⌘⇧S` |
 | Bold / italic | `⌘B` / `⌘I` |

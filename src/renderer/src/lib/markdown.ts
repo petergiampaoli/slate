@@ -9,7 +9,7 @@ import rehypeHighlight from 'rehype-highlight'
 import rehypeStringify from 'rehype-stringify'
 import type { NoteMeta, VaultIndex } from './indexer'
 import { splitFrontmatter } from './indexer'
-import { basename, escapeHtml, extname, isImage, slugify, dirname, joinPath } from './utils'
+import { basename, escapeHtml, extname, isImage, isAudio, isVideo, isPdf, slugify, dirname, joinPath } from './utils'
 
 /* ------------------------------------------------------------------ */
 /* A minimal mdast walker (avoids pulling in unist-util-visit)         */
@@ -112,6 +112,32 @@ function remarkSlateLinks(ctx: RenderContext, sourcePath: string) {
               url: ctx.assetUrl(parts.target, sourcePath),
               alt: display,
               data: { hProperties: { className: 'embed-image' } }
+            })
+          } else if (isAudio(parts.target) || isVideo(parts.target)) {
+            out.push({
+              type: 'slateMedia',
+              data: {
+                hName: isAudio(parts.target) ? 'audio' : 'video',
+                hProperties: {
+                  className: 'embed-media',
+                  controls: true,
+                  preload: 'metadata',
+                  src: ctx.assetUrl(parts.target, sourcePath)
+                }
+              },
+              children: []
+            })
+          } else if (isPdf(parts.target)) {
+            out.push({
+              type: 'slateMedia',
+              data: {
+                hName: 'iframe',
+                hProperties: {
+                  className: 'pdf-embed',
+                  src: ctx.assetUrl(parts.target, sourcePath)
+                }
+              },
+              children: []
             })
           } else if (resolved) {
             out.push({

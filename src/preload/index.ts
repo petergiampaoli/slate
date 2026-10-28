@@ -62,6 +62,12 @@ const api: SlateApi = {
     showItemInFolder: (path) => ipcRenderer.invoke('shell:showItemInFolder', path),
     trash: (path) => ipcRenderer.invoke('shell:trash', path)
   },
+  dictation: {
+    engine: () => ipcRenderer.invoke('dictation:engine'),
+    requestMic: () => ipcRenderer.invoke('dictation:requestMic'),
+    transcribe: (wav, language, duration) => ipcRenderer.invoke('dictation:transcribe', wav, language, duration),
+    onProgress: (cb) => subscribe<number>('dictation:progress', cb)
+  },
   users: {
     provision: (name, preferredPath) => ipcRenderer.invoke('users:provision', name, preferredPath),
     defaultPath: (name) => ipcRenderer.invoke('users:defaultPath', name),

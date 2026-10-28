@@ -108,6 +108,29 @@ export interface SyncSettings {
   remote: string | null
 }
 
+export interface DictationSettings {
+  language: string
+  keepAudio: boolean
+  autoTitle: boolean
+}
+
+export interface DictationEngineInfo {
+  available: boolean
+  modelName: string
+  modelPath: string | null
+  binaryPath: string | null
+  modelSize: number
+  reason?: string
+}
+
+export interface TranscriptionResponse {
+  ok: boolean
+  text?: string
+  error?: string
+  model?: string
+  seconds?: number
+}
+
 export interface UserProfileSettings {
   /** Active user of this vault. */
   name: string
@@ -133,6 +156,7 @@ export interface AppSettings {
   vaultPath: string | null
   recentVaults: string[]
   profile: UserProfileSettings
+  dictation: DictationSettings
   theme: ThemeSettings
   editor: EditorSettings
   dailyNotes: DailyNotesSettings
@@ -237,6 +261,12 @@ export interface SlateApi {
     openPath(path: string): Promise<void>
     showItemInFolder(path: string): Promise<void>
     trash(path: string): Promise<void>
+  }
+  dictation: {
+    engine(): Promise<DictationEngineInfo>
+    requestMic(): Promise<boolean>
+    transcribe(wav: Uint8Array, language?: string, duration?: number): Promise<TranscriptionResponse>
+    onProgress(cb: (percent: number) => void): () => void
   }
   users: {
     provision(name: string, preferredPath?: string): Promise<UserProvisionResult>

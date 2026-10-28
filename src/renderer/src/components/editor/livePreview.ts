@@ -130,6 +130,24 @@ class EmbedWidget extends WidgetType {
   }
 }
 
+class MediaWidget extends WidgetType {
+  constructor(readonly src: string, readonly kind: 'audio' | 'video') {
+    super()
+  }
+  eq(other: MediaWidget): boolean {
+    return other.src === this.src && other.kind === this.kind
+  }
+  toDOM(view: EditorView): HTMLElement {
+    const element = document.createElement(this.kind)
+    element.className = this.kind === 'audio' ? 'cm-widget-audio' : 'cm-widget-video'
+    element.setAttribute('controls', 'true')
+    element.setAttribute('preload', 'metadata')
+    element.setAttribute('src', this.src)
+    element.addEventListener('load', () => view.requestMeasure())
+    return element
+  }
+}
+
 class ImageWidget extends WidgetType {
   constructor(readonly src: string, readonly alt: string) {
     super()
@@ -439,6 +457,11 @@ function buildDecorations(view: EditorView, opts: LivePreviewOptions): Decoratio
         if (isImageName(target)) {
           const resolved = opts.resolveAsset(target)
           replace(from, to, { widget: new ImageWidget(opts.assetUrl(resolved), label) })
+        } else if (isAudioName(target) || isVideoName(target)) {
+          const resolved = opts.resolveAsset(target)
+          replace(from, to, {
+            widget: new MediaWidget(opts.assetUrl(resolved), isAudioName(target) ? 'audio' : 'video')
+          })
         } else {
           const resolved = opts.resolveLink(target)
           replace(from, to, { widget: new EmbedWidget(label, target, resolved, opts) })
@@ -553,6 +576,14 @@ function buildDecorations(view: EditorView, opts: LivePreviewOptions): Decoratio
   }
 
   return Decoration.set(decorations, true)
+}
+
+function isAudioName(name: string): boolean {
+  return /\.(mp3|wav|m4a|ogg|flac|aac|webm)$/i.test(name.trim())
+}
+
+function isVideoName(name: string): boolean {
+  return /\.(mp4|mov|webm|mkv|m4v)$/i.test(name.trim())
 }
 
 function isImageName(name: string): boolean {

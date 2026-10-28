@@ -7,6 +7,7 @@ import {
   GitBranch,
   HardDrive,
   Keyboard,
+  Mic,
   Moon,
   Palette,
   RefreshCw,
@@ -20,19 +21,20 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react'
-import type { GitStatus } from '@shared/types'
+import type { DictationEngineInfo, GitStatus } from '@shared/types'
 import { api, useStore } from '../state/store'
 import { cn, relativeTime } from '../lib/utils'
 import { repoNameFor } from '@shared/naming'
 import { HOTKEYS } from './hotkeys'
 import { useContextMenu } from './ContextMenu'
 
-type Section = 'general' | 'editor' | 'appearance' | 'files' | 'daily' | 'sync' | 'hotkeys' | 'about'
+type Section = 'general' | 'editor' | 'appearance' | 'dictation' | 'files' | 'daily' | 'sync' | 'hotkeys' | 'about'
 
 const SECTIONS: { id: Section; label: string; icon: typeof SettingsIcon }[] = [
   { id: 'general', label: 'General', icon: SlidersHorizontal },
   { id: 'editor', label: 'Editor', icon: Type },
   { id: 'appearance', label: 'Appearance', icon: Palette },
+  { id: 'dictation', label: 'Dictation', icon: Mic },
   { id: 'files', label: 'Files & links', icon: FolderOpen },
   { id: 'daily', label: 'Daily notes', icon: Sparkles },
   { id: 'sync', label: 'Sync & backup', icon: Cloud },
@@ -71,6 +73,7 @@ export function SettingsView({ embedded = false, initial }: { embedded?: boolean
         {section === 'general' && <GeneralSection />}
         {section === 'editor' && <EditorSection />}
         {section === 'appearance' && <AppearanceSection />}
+        {section === 'dictation' && <DictationSection />}
         {section === 'files' && <FilesSection />}
         {section === 'daily' && <DailySection />}
         {section === 'sync' && <SyncSection />}
@@ -348,6 +351,65 @@ function AppearanceSection(): React.JSX.Element {
           placeholder={'.markdown-rendered h1 { letter-spacing: -0.01em; }'}
           onChange={(e) => update({ customCss: e.target.value })}
         />
+      </div>
+    </>
+  )
+}
+
+function DictationSection(): React.JSX.Element {
+  const settings = useStore((s) => s.settings)
+  const [engine, setEngine] = useState<DictationEngineInfo | null>(null)
+
+  useEffect(() => {
+    void api.dictation.engine().then(setEngine).catch(() => setEngine(null))
+  }, [])
+
+  const update = (patch: Partial<typeof settings.dictation>): void =>
+    void useStore.getState().setSettings({ dictation: { ...settings.dictation, ...patch } })
+
+  return (
+    <>
+      <Heading
+        title="Dictation"
+        desc="One click records your voice and turns it into a new note. Speech recognition runs entirely on this Mac."
+      />
+      <Row
+        name="Speech engine"
+        help={
+          engine?.available
+            ? `${engine.modelName} · ${Math.round(engine.modelSize / 1024 / 1024)} MB · offline`
+            : engine?.reason ?? 'Checking…'
+        }
+      >
+        <span className={cn('status-dot', engine?.available ? 'ok' : 'error')} />
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          {engine?.available ? 'Ready' : 'Unavailable'}
+        </span>
+      </Row>
+      <Row name="Keep the audio recording" help="Attach the WAV file to the note so you can listen back.">
+        <Toggle value={settings.dictation.keepAudio} onChange={(value) => update({ keepAudio: value })} />
+      </Row>
+      <Row
+        name="Title from the transcript"
+        help="Uses the topic or first words of the recording. Turn off for “Dictation <date>”."
+      >
+        <Toggle value={settings.dictation.autoTitle} onChange={(value) => update({ autoTitle: value })} />
+      </Row>
+      <Row name="Language" help="The bundled model is English-only.">
+        <select
+          className="select-input"
+          value={settings.dictation.language}
+          onChange={(e) => update({ language: e.target.value })}
+        >
+          <option value="en">English</option>
+        </select>
+      </Row>
+      <div style={{ marginTop: 18, padding: 14, border: '1px solid var(--border)', borderRadius: 10, fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.7 }}>
+        <Mic size={13} style={{ verticalAlign: -2, marginRight: 5 }} />
+        Start a recording with <span className="kbd">⌘⇧M</span>, the microphone in the sidebar, or
+        <span className="kbd">⌘P</span> → <em>Dictate a note</em>. Press <strong>Stop &amp; transcribe</strong> when you’re
+        done — Slate writes the transcript into a note, names it from what you said, and attaches the audio.
+        Microphone and speech permissions are managed in <em>System Settings → Privacy &amp; Security</em>.
       </div>
     </>
   )

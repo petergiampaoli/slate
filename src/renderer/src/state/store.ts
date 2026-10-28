@@ -79,6 +79,7 @@ export type ModalState =
       onConfirm: () => void | Promise<void>
     }
   | { type: 'shortcuts' }
+  | { type: 'dictation' }
   | { type: 'template-picker' }
   | { type: 'local-graph' }
 

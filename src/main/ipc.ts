@@ -1,4 +1,4 @@
-import { BrowserWindow, app, dialog, ipcMain, net, shell } from 'electron'
+import { BrowserWindow, app, dialog, ipcMain, net, shell, systemPreferences } from 'electron'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import { pathToFileURL } from 'node:url'
@@ -8,6 +8,7 @@ import { git } from './git'
 import { settingsStore } from './store'
 import { vault } from './vault'
 import { writeStarterVault } from './starter'
+import { dictationEngine, transcribeWav } from './dictation'
 import { defaultVaultPath, provisionUser } from './users'
 import { repoNameFor } from '@shared/naming'
 
@@ -107,6 +108,26 @@ export function registerIpc(): void {
     if (!vault().path) return { notes: 0, words: 0, folders: 0, attachments: 0 }
     return vault().stats()
   })
+
+  ipcMain.handle('dictation:engine', () => dictationEngine())
+
+  ipcMain.handle('dictation:requestMic', async () => {
+    if (process.platform !== 'darwin') return true
+    const status = systemPreferences.getMediaAccessStatus('microphone')
+    if (status === 'granted') return true
+    if (status === 'denied' || status === 'restricted') return false
+    return systemPreferences.askForMediaAccess('microphone')
+  })
+
+  ipcMain.handle(
+    'dictation:transcribe',
+    (event, wav: Uint8Array, language?: string, duration?: number) =>
+      transcribeWav(wav, {
+        language,
+        duration,
+        onProgress: (percent) => event.sender.send('dictation:progress', percent)
+      })
+  )
 
   ipcMain.handle('users:provision', (_e, name: string, preferredPath?: string) =>
     provisionUser(name, preferredPath)

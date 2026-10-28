@@ -22,6 +22,7 @@ import {
   LayoutGrid,
   Link,
   ListTree,
+  Mic,
   Maximize2,
   Moon,
   Network,
@@ -95,6 +96,15 @@ export function buildCommands(): Command[] {
         await s.refreshVault()
         s.openSpecial('canvas', { path: canvasPath })
       }
+    },
+    {
+      id: 'dictate',
+      label: 'Dictate a note',
+      icon: Mic,
+      hotkey: '⌘⇧M',
+      detail: 'Record audio and transcribe it into a new note',
+      group: 'File',
+      run: () => s.showModal({ type: 'dictation' })
     },
     {
       id: 'open-daily',

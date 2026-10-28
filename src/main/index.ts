@@ -1,4 +1,4 @@
-import { BrowserWindow, app, ipcMain, nativeTheme, protocol, shell } from 'electron'
+import { BrowserWindow, app, ipcMain, nativeTheme, protocol, session, shell } from 'electron'
 import path from 'node:path'
 import { buildMenu } from './menu'
 import { pickVaultOnFirstRun, registerAssetProtocol, registerIpc } from './ipc'
@@ -91,6 +91,12 @@ function createWindow(): BrowserWindow {
 
 app.whenReady().then(async () => {
   nativeTheme.themeSource = 'system'
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
+    callback(permission === 'media')
+  })
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
+    return permission === 'media'
+  })
   registerIpc()
   ipcMain.on('app:version', (event) => {
     event.returnValue = app.getVersion()

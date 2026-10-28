@@ -1,7 +1,7 @@
 {
   "name": "slate",
   "productName": "Slate",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A local-first markdown knowledge base for macOS, with the vault stored as plain text and synced to a private GitHub repository.",
   "main": "./out/main/index.js",
   "author": "Slate",
@@ -16,7 +16,8 @@
     "dist:dir": "npm run build && electron-builder --mac --dir",
     "postinstall": "electron-builder install-app-deps",
     "dist:x64": "npm run build && electron-builder --mac --x64",
-    "dist:arm64": "npm run build && electron-builder --mac --arm64"
+    "dist:arm64": "npm run build && electron-builder --mac --arm64",
+    "setup:whisper": "bash scripts/setup-whisper.sh"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.4",
