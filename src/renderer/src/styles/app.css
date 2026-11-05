@@ -2064,3 +2064,114 @@ a {
   color: var(--accent);
   backdrop-filter: blur(2px);
 }
+
+/* ============================================================
+   Spell popup
+   ============================================================ */
+
+.spell-popup {
+  position: fixed;
+  z-index: 320;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 9px;
+  animation: pop-in 0.12s var(--ease);
+  user-select: none;
+}
+
+.spell-popup-head {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 600;
+  color: var(--text-faint);
+  padding: 0 4px 6px;
+}
+
+.spell-word {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 0 5px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spell-suggestions {
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.spell-suggestion {
+  text-align: left;
+  padding: 5px 7px;
+  border-radius: 5px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spell-suggestion:hover {
+  background: var(--bg-accent-soft);
+  color: var(--text);
+}
+
+.spell-none {
+  padding: 5px 7px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.spell-corrected-row {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 0 5px 8px;
+  font-size: 13.5px;
+}
+
+.spell-original {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, #f85149 70%, transparent);
+}
+
+.spell-arrow {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.spell-corrected {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.spell-action {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 6px 7px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: left;
+}
+
+.spell-action:hover {
+  background: var(--bg-accent-soft);
+  color: var(--text);
+}
+
+.spell-popup-foot {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border);
+}

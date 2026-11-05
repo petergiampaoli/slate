@@ -108,6 +108,11 @@ export interface SyncSettings {
   remote: string | null
 }
 
+export interface SpellcheckSettings {
+  autocorrect: boolean
+  customWords: string[]
+}
+
 export interface DictationSettings {
   language: string
   keepAudio: boolean
@@ -157,6 +162,7 @@ export interface AppSettings {
   recentVaults: string[]
   profile: UserProfileSettings
   dictation: DictationSettings
+  spellcheck: SpellcheckSettings
   theme: ThemeSettings
   editor: EditorSettings
   dailyNotes: DailyNotesSettings

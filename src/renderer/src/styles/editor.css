@@ -588,3 +588,24 @@ html[data-theme='light'] .cm-editor .tok-propertyName { color: #4078f2; }
   border-radius: 7px;
   margin: 8px 0;
 }
+
+/* ---------- Spell check ---------- */
+
+.cm-spell-error {
+  text-decoration: underline wavy #f85149;
+  text-decoration-skip-ink: none;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.cm-spell-corrected {
+  text-decoration: underline dotted color-mix(in srgb, var(--accent) 85%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-decoration-skip-ink: none;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.cm-spell-corrected:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}

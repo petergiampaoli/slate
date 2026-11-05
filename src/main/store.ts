@@ -10,6 +10,10 @@ export function defaultSettings(): AppSettings {
     version: SETTINGS_VERSION,
     vaultPath: null,
     recentVaults: [],
+    spellcheck: {
+      autocorrect: true,
+      customWords: []
+    },
     dictation: {
       language: 'en',
       keepAudio: true,

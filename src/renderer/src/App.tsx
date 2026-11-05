@@ -8,6 +8,7 @@ import { RightSidebar } from './components/RightSidebar'
 import { ContextMenuProvider } from './components/ContextMenu'
 import { ModalHost } from './components/Modals'
 import { Toasts } from './components/Toasts'
+import { SpellPopup } from './components/spell/SpellPopup'
 import { VaultSetup } from './components/VaultSetup'
 import { editorCommand, runExport } from './components/editorBridge'
 import { api as slateApi } from './state/store'
@@ -382,6 +383,7 @@ export default function App(): React.JSX.Element {
           <StatusBar />
           <ModalHost />
           <Toasts />
+          <SpellPopup />
           {dragging && <div className="drag-overlay">Drop files to add them to your vault</div>}
         </div>
       )}

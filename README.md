@@ -26,6 +26,7 @@ Slate does not use a proprietary database. Notes are `.md` files, canvases are `
 - **Canvas** — Obsidian-compatible `.canvas` files with text/note cards, groups, connections, drag, resize and zoom.
 - **Studio** — dashboards of word clouds, word maps, theme timelines, activity and directory charts, scoped to folders with filters and per-chart settings.
 - **Offline dictation** — one click records, whisper.cpp transcribes on-device, and a titled note with the audio attached is created automatically.
+- **Spell check & auto-correct** — Google-style typo fixing with per-word undo, click-for-suggestions and a custom dictionary.
 - **Graph view** — force-directed global graph and a local 2-hop graph, colour-coded by folder, with search and pan/zoom.
 
 ### Navigation & workspace
@@ -36,6 +37,22 @@ Slate does not use a proprietary database. Notes are `.md` files, canvases are `
 - **Export** to PDF, HTML or Markdown; print-ready layout.
 - Native macOS menu bar, traffic-light window, dark/light/system themes and eight accent colours.
 - Custom CSS snippets, editor font/size/measure settings.
+
+### Spell check & auto-correct
+
+![Spell suggestions](docs/screenshot-spell-suggest.png)
+
+Slate has its own spell checker backed by the Hunspell English dictionary, with Google-Docs-style behaviour:
+
+- **Auto-correct as you type.** When you finish a word with a space or punctuation, high-confidence typos are fixed immediately: adjacent transpositions (`teh → the`, `recieve → receive`, `waht → what`), a doubled letter (`helllo → hello`) and a curated list of common misspellings (`definately → definitely`, `seperate → separate`, `dont → don't`). There is a toggle in settings if you want suggestions without automatic changes.
+- **Click a corrected word** to see what changed and press **Undo** to restore exactly what you typed. Undone words are left alone for the rest of the session.
+- **Click a flagged word** to get a small suggestion popup next to it. Pick a replacement, or add the word to your custom dictionary.
+- **Custom dictionary** for names, places and invented terms, editable in *Settings → Editor*.
+- Only prose is checked: code fences, inline code, wiki links, Markdown links, URLs, tags (including `#tags`) and YAML frontmatter are ignored.
+
+![Undo auto-correct](docs/screenshot-spell-undo.png)
+
+The checker is lazy-loaded with the editor, works offline, and replaces the browser's native squiggles so the popups follow Slate's design.
 
 ### Dictation
 

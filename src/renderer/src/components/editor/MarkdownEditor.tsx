@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { EditorState, Prec } from '@codemirror/state'
+import { EditorState, Prec, Transaction } from '@codemirror/state'
 import {
   EditorView,
   drawSelection,
@@ -28,6 +28,10 @@ import { livePreview } from './livePreview'
 import { api, useStore } from '../../state/store'
 import { basename, dirname, isImage, stripExt } from '../../lib/utils'
 import { registerEditorCommands, setPendingHeading } from '../editorBridge'
+import { attemptAutocorrect, refreshSpell, spellcheckExtension } from './spellcheckExtension'
+import { baseWord, ignoreAutoCorrect, loadSpellChecker } from '../../lib/spellcheck'
+
+let spellTimer: ReturnType<typeof setTimeout> | null = null
 
 interface Props {
   path: string
@@ -143,9 +147,49 @@ export function MarkdownEditor({
       return { from: match.from + hash + 1, options, filter: false, validFor: /^[\w\u00C0-\uFFFF/-]*$/ }
     }
 
+    const spellOptions = {
+      enabled: () => useStore.getState().settings.editor.spellcheck,
+      autocorrect: () => useStore.getState().settings.spellcheck?.autocorrect ?? true,
+      customWords: () =>
+        new Set((useStore.getState().settings.spellcheck?.customWords ?? []).map((word) => word.toLowerCase()))
+    }
+
     const updateListener = EditorView.updateListener.of((update: ViewUpdate) => {
       if (update.docChanged && !applyingExternal.current) {
         changeRef.current(update.state.doc.toString())
+        if (useStore.getState().spellPopup) useStore.getState().hideSpellPopup()
+        const typed = update.transactions.some((transaction) => {
+          const event = transaction.annotation(Transaction.userEvent)
+          return typeof event === 'string' && event.startsWith('input')
+        })
+        if (typed && spellOptions.enabled() && spellOptions.autocorrect()) {
+          const pos = update.state.selection.main.head
+          const previous = pos > 0 ? update.state.sliceDoc(pos - 1, pos) : ''
+          const beforePrevious = pos > 1 ? update.state.sliceDoc(pos - 2, pos - 1) : ''
+          const justFinishedWord =
+            /[\s.,;:!?)\]}'"”’—–-]/.test(previous) && /[\p{L}'’]/u.test(beforePrevious)
+          if (justFinishedWord) {
+            const line = update.state.doc.lineAt(pos)
+            const before = line.text.slice(0, pos - line.from)
+            const match = /([\p{L}][\p{L}'’]*)([^\p{L}'’]{0,3})$/u.exec(before)
+            if (match) {
+              const target = {
+                from: line.from + match.index,
+                to: line.from + match.index + match[1].length,
+                word: match[1]
+              }
+              queueMicrotask(() => {
+                void attemptAutocorrect(update.view, spellOptions, target)
+              })
+            }
+          } else {
+            if (spellTimer) clearTimeout(spellTimer)
+            spellTimer = setTimeout(() => {
+              spellTimer = null
+              void attemptAutocorrect(update.view, spellOptions)
+            }, 550)
+          }
+        }
       }
       if (typewriter && update.selectionSet) {
         const head = update.state.selection.main.head
@@ -169,6 +213,7 @@ export function MarkdownEditor({
         EditorView.lineWrapping,
         markdown({ base: markdownLanguage, codeLanguages: languages, addKeymap: true }),
         syntaxHighlighting(classHighlighter),
+        spellcheckExtension(spellOptions),
         livePreview({
           openLink,
           openTag: (tag) => useStore.getState().setSearchQuery(`tag:${tag}`),
@@ -187,7 +232,7 @@ export function MarkdownEditor({
         search({ top: true }),
         highlightSelectionMatches(),
         EditorView.contentAttributes.of({
-          spellcheck: String(spellcheck),
+          spellcheck: 'false',
           autocorrect: 'on',
           autocapitalize: 'sentences'
         }),
@@ -228,6 +273,38 @@ export function MarkdownEditor({
               event.preventDefault()
               void useStore.getState().openNote(linkEl.dataset.href, { newTab: event.shiftKey })
               return true
+            }
+            return false
+          },
+          click: (event, view) => {
+            const target = (event.target as HTMLElement).closest('[data-spell]') as HTMLElement | null
+            if (!target) return false
+            const from = Number(target.dataset.from)
+            const to = Number(target.dataset.to)
+            if (!Number.isFinite(from) || !Number.isFinite(to)) return false
+            const coords = view.coordsAtPos(from)
+            const x = coords?.left ?? event.clientX
+            const y = coords?.bottom ?? event.clientY
+            const store = useStore.getState()
+            if (target.dataset.spell === 'corrected') {
+              store.showSpellPopup({
+                kind: 'corrected',
+                word: target.dataset.original ?? '',
+                corrected: target.dataset.corrected ?? '',
+                from,
+                to,
+                x,
+                y
+              })
+            } else {
+              const word = target.dataset.word ?? view.state.sliceDoc(from, to)
+              void loadSpellChecker().then((checker) => {
+                const capitalised = /^\p{Lu}/u.test(word)
+                const suggestions = checker.suggest(baseWord(word), 6).map((entry) =>
+                  capitalised ? entry.charAt(0).toUpperCase() + entry.slice(1) : entry
+                )
+                useStore.getState().showSpellPopup({ kind: 'error', word, suggestions, from, to, x, y })
+              })
             }
             return false
           },
@@ -272,6 +349,21 @@ export function MarkdownEditor({
 
     const view = new EditorView({ state, parent: hostRef.current })
     viewRef.current = view
+    const unsubscribeSettings = useStore.subscribe((current, previous) => {
+      if (
+        current.settings.editor.spellcheck !== previous.settings.editor.spellcheck ||
+        current.settings.spellcheck !== previous.settings.spellcheck
+      ) {
+        try {
+          view.dispatch({ effects: refreshSpell.of(null) })
+        } catch {
+          /* view disposed */
+        }
+      }
+    })
+    if (import.meta.env.DEV) {
+      ;(window as unknown as { __cmView?: EditorView }).__cmView = view
+    }
     view.focus()
     view.dispatch({ selection: { anchor: Math.min(view.state.doc.length, initialContent.length) } })
 
@@ -293,11 +385,38 @@ export function MarkdownEditor({
         case 'task': return toggleLines(v, '- [ ] ')
         case 'toggle-task': return toggleTask(v)
         case 'insert-text': return insertText(v, String(payload ?? ''))
+        case 'spell-replace': {
+          const data = payload as { from: number; to: number; text: string }
+          v.dispatch({
+            changes: { from: data.from, to: data.to, insert: data.text },
+            selection: { anchor: data.from + data.text.length }
+          })
+          useStore.getState().hideSpellPopup()
+          return true
+        }
+        case 'spell-undo': {
+          const data = payload as { from: number; to: number; original: string }
+          ignoreAutoCorrect(data.original)
+          v.dispatch({
+            changes: { from: data.from, to: data.to, insert: data.original },
+            selection: { anchor: data.from + data.original.length }
+          })
+          useStore.getState().hideSpellPopup()
+          return true
+        }
+        case 'spell-refresh':
+          v.dispatch({ effects: refreshSpell.of(null) })
+          return true
         default: return false
       }
     })
 
     return () => {
+      if (spellTimer) {
+        clearTimeout(spellTimer)
+        spellTimer = null
+      }
+      unsubscribeSettings()
       unregister()
       view.destroy()
       viewRef.current = null

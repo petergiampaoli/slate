@@ -49,6 +49,10 @@ export const api = window.slate
 export type SidebarTab = 'files' | 'search' | 'tags' | 'bookmarks' | 'graph'
 export type RightTab = 'backlinks' | 'outline' | 'properties' | 'localgraph'
 
+export type SpellPopupState =
+  | { kind: 'error'; word: string; suggestions: string[]; from: number; to: number; x: number; y: number }
+  | { kind: 'corrected'; word: string; corrected: string; from: number; to: number; x: number; y: number }
+
 export interface Toast {
   id: string
   message: string
@@ -127,6 +131,7 @@ interface AppState {
   searchToken: number
   selectedFolder: string | null
   studioScope: string
+  spellPopup: SpellPopupState | null
   fileStats: Record<string, { mtime: number; size: number }>
   sync: SyncState
   historyVersion: number
@@ -134,6 +139,9 @@ interface AppState {
   setMultiSelect: (paths: string[]) => void
   setSelectedFolder: (path: string | null) => void
   setStudioScope: (scope: string) => void
+  showSpellPopup: (popup: SpellPopupState) => void
+  hideSpellPopup: () => void
+  addDictionaryWord: (word: string) => Promise<void>
   syncTitleFor: (path: string) => Promise<void>
   addTitlesToVault: () => Promise<void>
 
@@ -316,6 +324,7 @@ export const useStore = create<AppState>((set, get) => ({
   searchToken: 0,
   selectedFolder: null,
   studioScope: '',
+  spellPopup: null,
   fileStats: {},
   sync: { status: null, busy: false, lastSync: null, message: null },
   historyVersion: 0,
@@ -323,6 +332,17 @@ export const useStore = create<AppState>((set, get) => ({
   setMultiSelect: (paths) => set({ multiSelect: paths }),
   setSelectedFolder: (path) => set({ selectedFolder: path }),
   setStudioScope: (scope) => set({ studioScope: scope }),
+  showSpellPopup: (popup) => set({ spellPopup: popup }),
+  hideSpellPopup: () => set({ spellPopup: null }),
+  async addDictionaryWord(word) {
+    if (!word.trim()) return
+    const settings = get().settings
+    const words = new Set(settings.spellcheck.customWords.map((entry) => entry.toLowerCase()))
+    words.add(word.trim().toLowerCase())
+    await get().setSettings({
+      spellcheck: { ...settings.spellcheck, customWords: [...words].sort((a, b) => a.localeCompare(b)) }
+    })
+  },
 
   async init() {
     const settings = await api.settings.get()

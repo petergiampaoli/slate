@@ -283,9 +283,46 @@ function EditorSection(): React.JSX.Element {
           onChange={(e) => update({ lineWidth: Number(e.target.value) })}
         />
       </Row>
-      <Row name="Spell check">
+      <Row name="Spell check" help="Underlines unknown words and offers suggestions when you click them.">
         <Toggle value={settings.editor.spellcheck} onChange={(v) => update({ spellcheck: v })} />
       </Row>
+      <Row
+        name="Auto-correct common typos"
+        help="Fixes swapped letters, doubled letters and common misspellings as you type. Click an underlined word to undo."
+      >
+        <Toggle
+          value={settings.spellcheck.autocorrect}
+          onChange={(v) =>
+            void useStore.getState().setSettings({
+              spellcheck: { ...settings.spellcheck, autocorrect: v }
+            })
+          }
+        />
+      </Row>
+      <div style={{ marginTop: 20, marginBottom: 8 }}>
+        <div className="setting-label">
+          <div className="name">Custom dictionary</div>
+          <div className="help">
+            Words Slate should always accept — names, places, invented terms. One per line; saved when you leave the
+            field.
+          </div>
+        </div>
+        <textarea
+          className="textarea-input"
+          style={{ marginTop: 10, minHeight: 76, fontFamily: 'var(--font-ui)', fontSize: 12 }}
+          defaultValue={settings.spellcheck.customWords.join('\n')}
+          placeholder={'Giampaoli\nMiso\nDnd'}
+          onBlur={(event) => {
+            const words = event.target.value
+              .split(/[\n,]+/)
+              .map((word) => word.trim().toLowerCase())
+              .filter(Boolean)
+            void useStore.getState().setSettings({
+              spellcheck: { ...settings.spellcheck, customWords: [...new Set(words)] }
+            })
+          }}
+        />
+      </div>
       <Row name="Show line numbers in source mode">
         <Toggle value={settings.editor.showLineNumbers} onChange={(v) => update({ showLineNumbers: v })} />
       </Row>
