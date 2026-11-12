@@ -201,20 +201,31 @@ export function EditorPane({ tab, paneId, active }: Props): React.JSX.Element {
         </div>
       </div>
 
-      {conflict && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '7px 14px',
-            background: 'color-mix(in srgb, #d29922 14%, transparent)',
-            borderBottom: '1px solid var(--border)',
-            fontSize: 12,
-            color: 'var(--text-secondary)'
-          }}
-        >
-          <span style={{ flex: 1 }}>This file has also changed on disk. Your local edits are still here.</span>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        {conflict && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 14,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '7px 12px',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-strong)',
+              borderRadius: 9,
+              boxShadow: 'var(--shadow)',
+              fontSize: 12,
+              color: 'var(--text-secondary)',
+              maxWidth: 'min(760px, calc(100% - 32px))'
+            }}
+          >
+          <span style={{ flex: 1 }}>
+            This file changed on disk or in a sync. Your editor and cursor were left untouched.
+          </span>
           <button className="btn sm" onClick={() => void useStore.getState().reloadFromDisk(path)}>
             Load disk version
           </button>
@@ -222,12 +233,11 @@ export function EditorPane({ tab, paneId, active }: Props): React.JSX.Element {
             className="btn sm"
             onClick={() => useStore.setState((s) => ({ conflicts: { ...s.conflicts, [path]: false } }))}
           >
-            Keep mine
+            Keep my text
           </button>
         </div>
       )}
 
-      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
         {mode === 'reading' ? (
           <ReadingView
             path={path}

@@ -149,6 +149,7 @@ interface AppState {
   boot: () => Promise<void>
   refreshVault: (full?: boolean) => Promise<void>
   applyExternalChanges: (paths: string[]) => Promise<void>
+  applyPulledFiles: (paths: string[]) => Promise<void>
   setSettings: (patch: Partial<AppSettings>) => Promise<void>
   persistWorkspace: () => void
   restoreWorkspace: () => void
@@ -231,6 +232,7 @@ interface AppState {
 const saveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 let reindexTimer: ReturnType<typeof setTimeout> | null = null
 let titleTimer: ReturnType<typeof setTimeout> | null = null
+let externalSuppressedUntil = 0
 const titleSyncFailed: Record<string, string> = {}
 const loadedTitles: Record<string, string | null> = {}
 let workspaceTimer: ReturnType<typeof setTimeout> | null = null
@@ -424,6 +426,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   async applyExternalChanges(paths) {
+    if (Date.now() < externalSuppressedUntil) return
     const state = get()
     if (!state.vault) return
     const tree = await api.vault.tree()
@@ -436,21 +439,33 @@ export const useStore = create<AppState>((set, get) => ({
     const conflicts = { ...state.conflicts }
     const externalRevision = { ...state.externalRevision }
     let changed = false
+    let touched = false
 
     for (const raw of paths) {
       const path = raw.replace(/\\/g, '/')
-      if (!isNote(path)) continue
+      if (!isNote(path)) {
+        touched = true
+        continue
+      }
       const exists = files.includes(path)
       if (!exists) {
         if (notes[path]) {
           delete notes[path]
           changed = true
+        } else {
+          touched = true
         }
         continue
       }
-      if (!isMarkdown(path)) continue
+      if (!isMarkdown(path)) {
+        touched = true
+        continue
+      }
       try {
         const text = await api.fs.read(path)
+        // A watcher event for our own save is not an external change. Without this
+        // check, typing quickly after an autosave can raise a phantom conflict.
+        if (saved[path] !== undefined && saved[path] === text) continue
         if (contents[path] !== undefined && contents[path] === text) continue
         if (dirty[path]) {
           conflicts[path] = true
@@ -472,9 +487,67 @@ export const useStore = create<AppState>((set, get) => ({
       const index: VaultIndex = { ...state.index, notes }
       linkIndex(index)
       set({ tree, files, fileStats, index, contents, savedContents: saved, dirty, conflicts, externalRevision })
-    } else {
+    } else if (touched) {
+      // Only refresh the tree for real external additions/removals/attachments,
+      // never for the watcher echo of our own autosave.
       set({ tree, files, fileStats })
     }
+  },
+
+  async applyPulledFiles(paths) {
+    if (!paths.length) return
+    const state = get()
+    if (!state.vault) return
+    const tree = await api.vault.tree()
+    const files = flattenTree(tree).filter((n) => n.kind === 'file').map((n) => n.path)
+    const fileStats = statsFromTree(tree)
+    const notes = { ...state.index.notes }
+    const contents = { ...state.contents }
+    const saved = { ...state.savedContents }
+    const conflicts = { ...state.conflicts }
+    const openNotes = new Set<string>()
+    for (const pane of state.panes) {
+      for (const tab of pane.tabs) {
+        if (tab.kind === 'note' && tab.path) openNotes.add(tab.path)
+      }
+    }
+    let changed = false
+
+    for (const path of paths) {
+      if (!isNote(path)) continue
+      if (!files.includes(path)) {
+        if (notes[path]) {
+          delete notes[path]
+          changed = true
+          if (openNotes.has(path)) conflicts[path] = true
+        }
+        continue
+      }
+      if (!isMarkdown(path)) continue
+      try {
+        const text = await api.fs.read(path)
+        notes[path] = noteMetaFromText(path, text, fileStats[path])
+        changed = true
+        if (openNotes.has(path)) {
+          // Never replace the text in an open editor during sync. The user keeps
+          // their cursor and can opt in through the conflict banner.
+          if (contents[path] !== undefined && contents[path] !== text) conflicts[path] = true
+        } else {
+          contents[path] = text
+          saved[path] = text
+        }
+      } catch {
+        /* file vanished between listing and reading */
+      }
+    }
+
+    if (!changed) {
+      set({ tree, files, fileStats })
+      return
+    }
+    const index = { ...state.index, notes }
+    linkIndex(index)
+    set({ tree, files, fileStats, index, contents, savedContents: saved, conflicts })
   },
 
   async setSettings(patch) {
@@ -1323,12 +1396,15 @@ export const useStore = create<AppState>((set, get) => ({
 
   async syncNow(message) {
     if (get().sync.busy) return
+    externalSuppressedUntil = Date.now() + 2 * 60_000
     set((s) => ({ sync: { ...s.sync, busy: true, message: 'Syncing…' } }))
     try {
       await get().saveAll()
       const result = await api.git.sync(message)
       set((s) => ({ sync: { ...s.sync, busy: false, lastSync: Date.now(), message: result.message } }))
-      await get().refreshVault(true)
+      if (result.pulled && result.pulledFiles.length) {
+        await get().applyPulledFiles(result.pulledFiles)
+      }
       await get().refreshGit()
       const state = get()
       if (!result.ok) {
@@ -1339,6 +1415,8 @@ export const useStore = create<AppState>((set, get) => ({
     } catch (err) {
       set((s) => ({ sync: { ...s.sync, busy: false, message: String(err) } }))
       get().toast(`Sync failed: ${String(err)}`, 'error')
+    } finally {
+      externalSuppressedUntil = Date.now() + 2500
     }
   },
 

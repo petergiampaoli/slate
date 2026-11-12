@@ -99,7 +99,7 @@ Open Studio from the ribbon, with `⌘P` → *Open Studio*, or right-click a fol
 ### Storage & sync
 - The vault is a git repository. Sync = `fetch → pull --rebase --autostash → add → commit → push`.
 - **Create a private GitHub repo** from Settings (uses the `gh` CLI), or connect any existing remote.
-- **Automatic sync** on an interval, optionally after every save.
+- **Automatic sync** on an interval, optionally after every save. Sync runs in the background and never touches the editor: pushes don't rebuild the index or scroll the page, and if a pull changes a note that is open, the text and cursor are left alone and a non-blocking banner offers *Load disk version* / *Keep my text*.
 - **Version history** per note: browse commits, preview any revision, restore it.
 - Conflicts are **reported, never silently overwritten**. External file changes are detected with `fs.watch` and reloaded unless you have unsaved edits (then you get a conflict banner).
 

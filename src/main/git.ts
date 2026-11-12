@@ -207,15 +207,25 @@ class GitService {
   }
 
   async sync(message?: string): Promise<SyncResult> {
-    const result: SyncResult = { ok: true, message: '', committed: 0, pulled: false, pushed: false, conflicts: [] }
+    const result: SyncResult = {
+      ok: true,
+      message: '',
+      committed: 0,
+      pulled: false,
+      pushed: false,
+      conflicts: [],
+      pulledFiles: []
+    }
     if (!this.isRepo()) {
       await this.ensureRepo()
     }
     const branch = await this.branch()
     const remote = await this.remote()
+    let headBeforePull = ''
 
     if (remote) {
       await run('gh', ['auth', 'setup-git'], this.root, { timeout: 15000 })
+      headBeforePull = (await this.git(['rev-parse', 'HEAD'])).stdout.trim()
       const fetch = await this.git(['fetch', 'origin', branch], 60000)
       if (fetch.code === 0) {
         const counts = await this.git(['rev-list', '--left-right', '--count', `origin/${branch}...HEAD`])
@@ -233,10 +243,18 @@ class GitService {
               committed: 0,
               pulled: false,
               pushed: false,
-              conflicts
+              conflicts,
+              pulledFiles: []
             }
           }
           result.pulled = true
+          if (headBeforePull) {
+            const changed = await this.git(['diff', '--name-only', '--no-renames', headBeforePull, 'HEAD'])
+            result.pulledFiles = changed.stdout
+              .split('\n')
+              .map((file) => file.trim())
+              .filter(Boolean)
+          }
         }
       }
     }

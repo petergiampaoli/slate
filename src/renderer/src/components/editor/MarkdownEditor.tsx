@@ -431,10 +431,21 @@ export function MarkdownEditor({
     const current = view.state.doc.toString()
     if (current === content) return
     applyingExternal.current = true
-    const anchor = view.state.selection.main.head
+
+    // Replace only the changed span. CodeMirror maps the selection through the
+    // change, so a background reload does not move the cursor unless the cursor
+    // was inside the replaced text.
+    let start = 0
+    while (start < current.length && start < content.length && current[start] === content[start]) start++
+    let oldEnd = current.length
+    let newEnd = content.length
+    while (oldEnd > start && newEnd > start && current[oldEnd - 1] === content[newEnd - 1]) {
+      oldEnd--
+      newEnd--
+    }
+
     view.dispatch({
-      changes: { from: 0, to: view.state.doc.length, insert: content },
-      selection: { anchor: Math.min(anchor, content.length) }
+      changes: { from: start, to: oldEnd, insert: content.slice(start, newEnd) }
     })
     applyingExternal.current = false
     // eslint-disable-next-line react-hooks/exhaustive-deps

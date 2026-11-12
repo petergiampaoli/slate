@@ -59,6 +59,8 @@ export interface SyncResult {
   pulled: boolean
   pushed: boolean
   conflicts: string[]
+  /** Files whose working-tree content changed as a result of the pull. */
+  pulledFiles: string[]
 }
 
 export interface CreateRepoResult {
