@@ -16,6 +16,7 @@ import {
   EMPTY_INDEX,
   type VaultIndex
 } from '../lib/indexer'
+import { emptyBoard as emptyBoardDoc } from '../lib/board'
 import {
   extractTitle,
   isTitleManaged,
@@ -84,6 +85,7 @@ export type ModalState =
     }
   | { type: 'shortcuts' }
   | { type: 'dictation' }
+  | { type: 'find-replace' }
   | { type: 'template-picker' }
   | { type: 'local-graph' }
 
@@ -168,7 +170,8 @@ interface AppState {
   notePath: () => string | null
   setActivePane: (paneId: string) => void
   openNote: (path: string, opts?: { newTab?: boolean; paneId?: string; history?: boolean; mode?: TabState['mode'] }) => Promise<void>
-  openSpecial: (kind: 'graph' | 'canvas' | 'settings' | 'search' | 'studio', opts?: { path?: string }) => void
+  openSpecial: (kind: 'graph' | 'canvas' | 'settings' | 'search' | 'studio' | 'board', opts?: { path?: string }) => void
+  createBoard: (name?: string) => Promise<string | null>
   closeTab: (paneId: string, tabId: string) => void
   closeActiveTab: () => void
   activateTab: (paneId: string, tabId: string) => void
@@ -669,6 +672,10 @@ export const useStore = create<AppState>((set, get) => ({
       get().openSpecial('canvas', { path })
       return
     }
+    if (path.toLowerCase().endsWith('.board')) {
+      get().openSpecial('board', { path })
+      return
+    }
     const state = get()
     if (!opts.newTab) {
       const found = findTabWithNote(state.panes, path)
@@ -755,10 +762,11 @@ export const useStore = create<AppState>((set, get) => ({
       canvas: stripExt(basename(opts.path ?? 'Canvas')),
       settings: 'Settings',
       search: 'Search',
-      studio: 'Studio'
+      studio: 'Studio',
+      board: stripExt(basename(opts.path ?? 'Board'))
     }
     const existing = pane.tabs.find(
-      (t) => t.kind === kind && (kind !== 'canvas' || t.path === opts.path)
+      (t) => t.kind === kind && ((kind !== 'canvas' && kind !== 'board') || t.path === opts.path)
     )
     if (existing) {
       set({
@@ -1011,6 +1019,25 @@ export const useStore = create<AppState>((set, get) => ({
     return path
   },
 
+  async createBoard(name) {
+    const state = get()
+    if (!state.vault) return null
+    const current = state.notePath()
+    let folder = state.selectedFolder !== null ? state.selectedFolder : ''
+    if (state.selectedFolder === null && current && state.settings.newNoteLocation === 'current') {
+      folder = dirname(current)
+    }
+    const base = (name ?? 'Untitled board').replace(/[/\\]/g, '-')
+    let path = joinPath(folder, `${base}.board`)
+    let i = 1
+    while (state.files.includes(path)) path = joinPath(folder, `${base} ${i++}.board`)
+    await api.fs.create(path, JSON.stringify(emptyBoardDoc(), null, 2))
+    await get().refreshVault()
+    get().openSpecial('board', { path })
+    get().toast('New board created', 'success')
+    return path
+  },
+
   async createFolder(parent = '') {
     const state = get()
     const run = async (name: string): Promise<void> => {
@@ -1174,7 +1201,7 @@ export const useStore = create<AppState>((set, get) => ({
         const panes = s.panes.map((p) => ({
           ...p,
           tabs: p.tabs.map((t) => {
-            if (t.kind !== 'note' || !t.path) return t
+            if ((t.kind !== 'note' && t.kind !== 'board') || !t.path) return t
             if (t.path === oldPath) return { ...t, path: target, title: stripExt(basename(target)) }
             if (isFolder && t.path.startsWith(`${oldPath}/`)) {
               const np = `${target}/${t.path.slice(oldPath.length + 1)}`
@@ -1232,7 +1259,14 @@ export const useStore = create<AppState>((set, get) => ({
         set((s) => {
           const panes = s.panes.map((p) => ({
             ...p,
-            tabs: p.tabs.filter((t) => !(t.kind === 'note' && t.path && (t.path === path || t.path.startsWith(`${path}/`))))
+            tabs: p.tabs.filter(
+              (t) =>
+                !(
+                  (t.kind === 'note' || t.kind === 'board') &&
+                  t.path &&
+                  (t.path === path || t.path.startsWith(`${path}/`))
+                )
+            )
           }))
           return { panes: panes.length ? panes : [newPane()] }
         })

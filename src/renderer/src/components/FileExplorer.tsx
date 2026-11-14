@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   BarChart3,
   ChevronRight,
+  LayoutDashboard,
   File,
   FileCode2,
   FileImage,
@@ -28,6 +29,7 @@ import type { FileNode } from '@shared/types'
 import { api, useStore } from '../state/store'
 import { useContextMenu, type MenuItem } from './ContextMenu'
 import { basename, dirname, extname, isCanvas, isImage, isNote } from '../lib/utils'
+import { isBoardFile } from '../lib/board'
 import { cn } from '../lib/utils'
 
 type SortMode = 'name' | 'modified' | 'created'
@@ -53,6 +55,10 @@ export function FileExplorer(): React.JSX.Element {
     useStore.getState().setSelectedFolder(null)
     if (isCanvas(node.path)) {
       useStore.getState().openSpecial('canvas', { path: node.path })
+      return
+    }
+    if (isBoardFile(node.path)) {
+      useStore.getState().openSpecial('board', { path: node.path })
       return
     }
     void useStore.getState().openNote(node.path, { newTab: event.metaKey || event.ctrlKey })
@@ -312,12 +318,13 @@ function TreeRow(props: RowProps): React.JSX.Element {
 }
 
 function displayName(name: string): string {
-  return name.replace(/\.(md|markdown|mdx)$/i, '')
+  return name.replace(/\.(md|markdown|mdx|board)$/i, '')
 }
 
 function iconFor(node: FileNode): React.JSX.Element {
   if (node.kind === 'folder') return <Folder size={14} strokeWidth={1.7} />
   const ext = extname(node.path)
+  if (isBoardFile(node.path)) return <LayoutDashboard size={14} strokeWidth={1.7} />
   if (isCanvas(node.path)) return <LayoutGrid size={14} strokeWidth={1.7} />
   if (isImage(node.path)) return <FileImage size={14} strokeWidth={1.7} />
   if (['mp3', 'wav', 'm4a', 'ogg', 'flac', 'aac'].includes(ext)) return <Music size={14} strokeWidth={1.7} />

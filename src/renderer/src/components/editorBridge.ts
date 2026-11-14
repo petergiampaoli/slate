@@ -62,3 +62,15 @@ export function takePendingHeading(): string | null {
   pendingHeading = null
   return value
 }
+
+let pendingSelection: { from: number; to: number } | null = null
+
+export function setPendingSelection(selection: { from: number; to: number } | null): void {
+  pendingSelection = selection
+}
+
+export function takePendingSelection(): { from: number; to: number } | null {
+  const value = pendingSelection
+  pendingSelection = null
+  return value
+}

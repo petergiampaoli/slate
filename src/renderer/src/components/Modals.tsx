@@ -18,6 +18,7 @@ import { quickSwitcherItems, fuzzyFind } from '../lib/search'
 import { cn, dirname, relativeTime, stripExt } from '../lib/utils'
 import { HOTKEYS } from './hotkeys'
 import { DictationOverlay } from './dictation/DictationOverlay'
+import { FindReplaceModal } from './FindReplaceModal'
 
 export function ModalHost(): React.JSX.Element {
   const modal = useStore((s) => s.modal)
@@ -39,6 +40,8 @@ export function ModalHost(): React.JSX.Element {
       return <ShortcutsModal />
     case 'dictation':
       return <DictationOverlay />
+    case 'find-replace':
+      return <FindReplaceModal />
     case 'template-picker':
       return <TemplatePicker />
     default:

@@ -2175,3 +2175,195 @@ a {
   padding-top: 5px;
   border-top: 1px solid var(--border);
 }
+
+/* ============================================================
+   Find & replace
+   ============================================================ */
+
+.find-replace {
+  width: min(760px, calc(100vw - 70px));
+  max-height: 78vh;
+  margin-top: 10vh;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 13px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: pop-in 0.16s var(--ease);
+}
+
+.find-replace-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.find-replace-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.find-replace-title h3 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.find-scope button:disabled {
+  opacity: 0.35;
+}
+
+.find-replace-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.find-replace-fields {
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.find-field {
+  margin: 0 0 8px;
+  height: 34px;
+}
+
+.find-field input {
+  font-size: 13px;
+}
+
+.find-toggles {
+  display: flex;
+  gap: 1px;
+}
+
+.find-toggles .icon-btn {
+  width: 24px;
+  height: 24px;
+}
+
+.find-regex-hint {
+  font-size: 10px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.find-scope-hint {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.find-invalid {
+  color: #f85149;
+}
+
+.find-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px 12px;
+  min-height: 160px;
+}
+
+.find-group {
+  padding: 7px 8px 4px;
+  border-radius: 7px;
+}
+
+.find-group:hover {
+  background: var(--bg-inset);
+}
+
+.find-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 4px 4px;
+}
+
+.find-group-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.find-group-path {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.find-group-count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.find-line {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  padding: 3px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.find-line:hover {
+  background: var(--bg-accent-soft);
+  color: var(--text-secondary);
+}
+
+.find-line mark {
+  background: color-mix(in srgb, #f5c542 32%, transparent);
+  color: var(--text);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.find-more {
+  font-size: 10px;
+  color: var(--text-faint);
+  padding: 2px 5px;
+}
+
+.find-replace-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  min-height: 52px;
+}
+
+.find-foot-note {
+  flex: 1;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  line-height: 1.45;
+}
+
+.find-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}

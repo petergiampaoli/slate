@@ -6,6 +6,7 @@ import './styles/editor.css'
 import './styles/markdown.css'
 import './styles/canvas.css'
 import './styles/studio.css'
+import './styles/board.css'
 import './styles/dictation.css'
 
 const container = document.getElementById('root')

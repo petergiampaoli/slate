@@ -79,6 +79,7 @@ export default function App(): React.JSX.Element {
   }, [ready])
 
   /* ---------- document title ---------- */
+  const activeKind = useStore((s) => s.activeTab()?.kind ?? 'note')
   const activeTitle = useStore((s) => {
     const pane = s.panes.find((p) => p.id === s.activePaneId) ?? s.panes[0]
     const tab = pane?.tabs.find((t) => t.id === pane.activeTabId)
@@ -98,6 +99,9 @@ export default function App(): React.JSX.Element {
       switch (action) {
         case 'new-note':
           void s.createNote()
+          break
+        case 'new-board':
+          void s.createBoard()
           break
         case 'dictate':
           s.showModal({ type: 'dictation' })
@@ -126,7 +130,14 @@ export default function App(): React.JSX.Element {
           void runExport('markdown')
           break
         case 'find-in-note':
-          editorCommand('find')
+          if (s.activeTab()?.kind === 'board') {
+            window.dispatchEvent(new CustomEvent('slate:board-find'))
+          } else {
+            editorCommand('find')
+          }
+          break
+        case 'find-replace':
+          s.showModal({ type: 'find-replace' })
           break
         case 'search-vault':
           s.setSidebarTab('search')
@@ -378,7 +389,7 @@ export default function App(): React.JSX.Element {
             <div className="main-area">
               <Workspace />
             </div>
-            <RightSidebarMount width={rightWidth} setWidth={setRightWidth} />
+            {activeKind !== 'board' && <RightSidebarMount width={rightWidth} setWidth={setRightWidth} />}
           </div>
           <StatusBar />
           <ModalHost />

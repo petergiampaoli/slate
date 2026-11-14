@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import {
   ChevronDown,
   X,
   Plus,
   Network,
   BarChart3,
+  LayoutDashboard,
   Mic,
   FileText,
   LayoutGrid,
@@ -30,6 +31,11 @@ export function TitleBar(): React.JSX.Element {
 
   const pane = panes.find((p) => p.id === activePaneId) ?? panes[0]
   const tabs = pane?.tabs ?? []
+
+  useEffect(() => {
+    const active = document.querySelector('.tabstrip .tab.active')
+    active?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [pane?.activeTabId, tabs.length])
 
   const closeTab = (tabId: string): void => {
     if (pane) useStore.getState().closeTab(pane.id, tabId)
@@ -142,6 +148,7 @@ export function TitleBar(): React.JSX.Element {
 function tabIcon(kind: string, path?: string): React.JSX.Element {
   if (kind === 'graph') return <Network size={13} strokeWidth={1.8} />
   if (kind === 'canvas') return <LayoutGrid size={13} strokeWidth={1.8} />
+  if (kind === 'board') return <LayoutDashboard size={13} strokeWidth={1.8} />
   if (kind === 'settings') return <Settings size={13} strokeWidth={1.8} />
   if (kind === 'search') return <Search size={13} strokeWidth={1.8} />
   if (path && path.endsWith('.canvas')) return <LayoutGrid size={13} strokeWidth={1.8} />
@@ -200,6 +207,9 @@ export function Ribbon(): React.JSX.Element {
       </button>
       <button className="ribbon-btn" title="Studio — project visualizations" onClick={() => useStore.getState().openSpecial('studio')}>
         <BarChart3 size={19} strokeWidth={1.6} />
+      </button>
+      <button className="ribbon-btn" title="New board (⌘⌥N)" onClick={() => void useStore.getState().createBoard()}>
+        <LayoutDashboard size={19} strokeWidth={1.6} />
       </button>
       <button className="ribbon-btn" title="Random note" onClick={() => void useStore.getState().openRandom()}>
         <DiceIcon />

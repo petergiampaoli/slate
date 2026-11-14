@@ -6,6 +6,7 @@ import { CanvasView } from './canvas/CanvasView'
 import { SettingsView } from './SettingsView'
 import { SearchPage } from './SearchPage'
 import { StudioView } from './studio/StudioView'
+import { BoardView } from './board/BoardView'
 import { Welcome } from './Welcome'
 import type { TabState } from '@shared/types'
 
@@ -53,6 +54,8 @@ function TabContent({ tab, paneId, active }: { tab: TabState; paneId: string; ac
       return <SearchPage />
     case 'studio':
       return <StudioView />
+    case 'board':
+      return <BoardView path={tab.path ?? ''} />
     default:
       return <Welcome />
   }

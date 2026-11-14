@@ -91,7 +91,9 @@ const api: SlateApi = {
     pdf: (html, name) => ipcRenderer.invoke('export:pdf', html, name),
     html: (html, name) => ipcRenderer.invoke('export:html', html, name),
     markdown: (content, name) => ipcRenderer.invoke('export:markdown', content, name),
-    svg: (svg, name) => ipcRenderer.invoke('export:svg', svg, name)
+    svg: (svg, name) => ipcRenderer.invoke('export:svg', svg, name),
+    png: (dataUrl, name) => ipcRenderer.invoke('export:png', dataUrl, name),
+    text: (content, name, extension, label) => ipcRenderer.invoke('export:text', content, name, extension, label)
   },
   menu: {
     onAction: (cb) => {

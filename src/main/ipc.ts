@@ -227,6 +227,24 @@ export function registerIpc(): void {
     return { ok: true, path: result.filePath }
   })
 
+  ipcMain.handle('export:png', async (_e, dataUrl: string, name: string) => {
+    const result = await dialog.showSaveDialog({ defaultPath: `${name}.png`, filters: [{ name: 'PNG image', extensions: ['png'] }] })
+    if (result.canceled || !result.filePath) return { ok: false }
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
+    await fs.writeFile(result.filePath, Buffer.from(base64, 'base64'))
+    return { ok: true, path: result.filePath }
+  })
+
+  ipcMain.handle('export:text', async (_e, content: string, name: string, extension: string, label: string) => {
+    const result = await dialog.showSaveDialog({
+      defaultPath: `${name}.${extension}`,
+      filters: [{ name: label, extensions: [extension] }]
+    })
+    if (result.canceled || !result.filePath) return { ok: false }
+    await fs.writeFile(result.filePath, content, 'utf8')
+    return { ok: true, path: result.filePath }
+  })
+
   ipcMain.handle('export:markdown', async (_e, content: string, name: string) => {
     const result = await dialog.showSaveDialog({ defaultPath: `${name}.md`, filters: [{ name: 'Markdown', extensions: ['md'] }] })
     if (result.canceled || !result.filePath) return { ok: false }

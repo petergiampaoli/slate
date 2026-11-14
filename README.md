@@ -26,6 +26,8 @@ Slate does not use a proprietary database. Notes are `.md` files, canvases are `
 - **Canvas** — Obsidian-compatible `.canvas` files with text/note cards, groups, connections, drag, resize and zoom.
 - **Studio** — dashboards of word clouds, word maps, theme timelines, activity and directory charts, scoped to folders with filters and per-chart settings.
 - **Offline dictation** — one click records, whisper.cpp transcribes on-device, and a titled note with the audio attached is created automatically.
+- **Boards** — Scapple-style freeform boards with notes, dotted/solid connections, labels, background shapes, magnetic grouping, stacks, styles, search and export.
+- **Find & replace** — note, folder or vault scope with preview, regex, whole word, case matching and git-backed safety.
 - **Spell check & auto-correct** — Google-style typo fixing with per-word undo, click-for-suggestions and a custom dictionary.
 - **Graph view** — force-directed global graph and a local 2-hop graph, colour-coded by folder, with search and pan/zoom.
 
@@ -37,6 +39,18 @@ Slate does not use a proprietary database. Notes are `.md` files, canvases are `
 - **Export** to PDF, HTML or Markdown; print-ready layout.
 - Native macOS menu bar, traffic-light window, dark/light/system themes and eight accent colours.
 - Custom CSS snippets, editor font/size/measure settings.
+
+### Find & replace
+
+![Find and replace](docs/screenshot-findreplace.png)
+
+Press **⌘⌥F** (or *Find and replace* in the palette) to search and replace with three scopes:
+
+- **Note** — the active note. Replacement is one undoable editor transaction (`⌘Z`).
+- **Folder** — the folder selected in the explorer, or the current note's folder, including subfolders.
+- **Vault** — every Markdown note.
+
+Options include match case, whole word and regular expressions (with `$1` group expansion). Results are previewed per file with highlighted context before anything is changed. Note-scope replacements apply immediately; folder/vault replacements show a confirmation with the match and file counts. Multi-file changes are recoverable from git history, and open notes update in place without resetting the editor.
 
 ### Spell check & auto-correct
 
@@ -53,6 +67,25 @@ Slate has its own spell checker backed by the Hunspell English dictionary, with 
 ![Undo auto-correct](docs/screenshot-spell-undo.png)
 
 The checker is lazy-loaded with the editor, works offline, and replaces the browser's native squiggles so the popups follow Slate's design.
+
+### Boards — Scapple-style freeform thinking
+
+![Board](docs/screenshot-board.png)
+
+Boards are a second canvas type, inspired by [Scapple](https://www.literatureandlatte.com/scapple/overview): a freeform sheet with no central idea, hierarchy or forced structure. Create one with **⌘⌥N**, from the ribbon, or **File → New Board**. Boards are stored as `.board` files and sync with the rest of the vault.
+
+- **Notes anywhere** — double-click empty space, type, and the note grows as you write. Drag to arrange, resize from the corner, or multi-select with shift/marquee.
+- **Connections** — drag from one note to another in *Connect* mode (or from a note's edge handle). Lines are dotted by default; adding an arrow at either or both ends makes them solid, exactly like Scapple. Double-click a line to label it, and toggle arrows in the inspector.
+- **Background shapes** — rectangle, rounded rectangle or ellipse, with fill/border/shadow, always behind notes. Turn on **magnetic** and overlapping notes move with the shape.
+- **Stacks** — select notes and press **⌘’** to stack them into a column. Editing note heights re-flows the notes below automatically; **⌘↵** inserts a stacked note; the inspector reorders or un-stacks.
+- **Inspector** — per-note font, size, bold/italic/underline/strike, text color, fill, border, radius, padding, alignment, shadow, fade; connection label/arrows/line style/color; shape fill/opacity/border/magnetic; alignment and distribution; saved style presets.
+- **Arrange** — align edges/centres, distribute horizontally/vertically, make same width/height, bring forward/send back.
+- **Canvas** — infinite pan/zoom, fit, zoom slider, grid with optional snapping, hold **Z** to peek at the whole board.
+- **Board search** — **⌘F** finds text on the board and pans to each match.
+- **Export** — PNG, PDF, SVG, OPML (shapes become groups) and plain text.
+- **Undo/redo**, copy/paste/duplicate, image/file drops and note previews.
+
+Boards are Slate-only; they don't affect Obsidian `.canvas` compatibility.
 
 ### Dictation
 
@@ -221,6 +254,8 @@ slate/
 | Graph view | `⌘G` |
 | Studio | `⌘P` → Open Studio |
 | Dictate a note | `⌘⇧M` |
+| Find & replace | `⌘⌥F` |
+| New board | `⌘⌥N` |
 | Save | `⌘S` |
 | Sync now | `⌘⇧S` |
 | Bold / italic | `⌘B` / `⌘I` |

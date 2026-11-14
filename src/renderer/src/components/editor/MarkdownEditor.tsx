@@ -12,7 +12,15 @@ import {
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
-import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from '@codemirror/search'
+import {
+  highlightSelectionMatches,
+  openSearchPanel,
+  replaceAll,
+  search,
+  SearchQuery,
+  searchKeymap,
+  setSearchQuery
+} from '@codemirror/search'
 import {
   autocompletion,
   closeBrackets,
@@ -27,7 +35,7 @@ import { classHighlighter } from '@lezer/highlight'
 import { livePreview } from './livePreview'
 import { api, useStore } from '../../state/store'
 import { basename, dirname, isImage, stripExt } from '../../lib/utils'
-import { registerEditorCommands, setPendingHeading } from '../editorBridge'
+import { registerEditorCommands, setPendingHeading, takePendingSelection } from '../editorBridge'
 import { attemptAutocorrect, refreshSpell, spellcheckExtension } from './spellcheckExtension'
 import { baseWord, ignoreAutoCorrect, loadSpellChecker } from '../../lib/spellcheck'
 
@@ -349,6 +357,16 @@ export function MarkdownEditor({
 
     const view = new EditorView({ state, parent: hostRef.current })
     viewRef.current = view
+    const pending = takePendingSelection()
+    if (pending) {
+      const from = Math.max(0, Math.min(pending.from, view.state.doc.length))
+      const to = Math.max(from, Math.min(pending.to, view.state.doc.length))
+      view.dispatch({
+        selection: { anchor: from, head: to },
+        effects: EditorView.scrollIntoView(from, { y: 'center' })
+      })
+      view.focus()
+    }
     const unsubscribeSettings = useStore.subscribe((current, previous) => {
       if (
         current.settings.editor.spellcheck !== previous.settings.editor.spellcheck ||
@@ -407,6 +425,36 @@ export function MarkdownEditor({
         case 'spell-refresh':
           v.dispatch({ effects: refreshSpell.of(null) })
           return true
+        case 'replace-all-query': {
+          const data = payload as {
+            query: string
+            replacement: string
+            caseSensitive: boolean
+            wholeWord: boolean
+            regexp: boolean
+          }
+          const query = new SearchQuery({
+            search: data.query,
+            replace: data.replacement,
+            caseSensitive: data.caseSensitive,
+            wholeWord: data.wholeWord,
+            regexp: data.regexp
+          })
+          v.dispatch({ effects: setSearchQuery.of(query) })
+          replaceAll(v)
+          return true
+        }
+        case 'reveal-range': {
+          const data = payload as { from: number; to: number }
+          const from = Math.max(0, Math.min(data.from, v.state.doc.length))
+          const to = Math.max(from, Math.min(data.to, v.state.doc.length))
+          v.dispatch({
+            selection: { anchor: from, head: to },
+            effects: EditorView.scrollIntoView(from, { y: 'center' })
+          })
+          v.focus()
+          return true
+        }
         default: return false
       }
     })

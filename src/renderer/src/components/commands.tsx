@@ -19,6 +19,7 @@ import {
   Image,
   Italic,
   Keyboard,
+  LayoutDashboard,
   LayoutGrid,
   Link,
   ListTree,
@@ -31,6 +32,7 @@ import {
   PanelRight,
   PenLine,
   RefreshCw,
+  Replace,
   Search,
   Settings,
   Sigma,
@@ -74,6 +76,15 @@ export function buildCommands(): Command[] {
       hotkey: '⌘N',
       group: 'File',
       run: () => s.createNote()
+    },
+    {
+      id: 'new-board',
+      label: 'New board',
+      icon: LayoutDashboard,
+      hotkey: '⌘⌥N',
+      detail: 'Freeform Scapple-style board',
+      group: 'File',
+      run: () => void s.createBoard()
     },
     {
       id: 'new-folder',
@@ -302,6 +313,15 @@ export function buildCommands(): Command[] {
       hotkey: '⌘K',
       group: 'Edit',
       run: () => editorCommand('link')
+    },
+    {
+      id: 'find-replace',
+      label: 'Find and replace…',
+      icon: Replace,
+      hotkey: '⌘⌥F',
+      detail: 'Replace in this note, this folder, or the whole vault',
+      group: 'Edit',
+      run: () => s.showModal({ type: 'find-replace' })
     },
     {
       id: 'find',

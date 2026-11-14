@@ -41,6 +41,7 @@ export function buildMenu(): void {
       submenu: [
         { label: 'New Note', accelerator: 'Cmd+N', click: () => send('new-note') },
         { label: 'New Window', accelerator: 'Cmd+Shift+N', click: () => send('new-window') },
+        { label: 'New Board', accelerator: 'Cmd+Alt+N', click: () => send('new-board') },
         { label: 'Dictate Note', accelerator: 'Cmd+Shift+M', click: () => send('dictate') },
         { type: 'separator' },
         {
@@ -85,6 +86,7 @@ export function buildMenu(): void {
         { role: 'selectAll' },
         { type: 'separator' },
         { label: 'Find in Note', accelerator: 'Cmd+F', click: () => send('find-in-note') },
+        { label: 'Find and Replace…', accelerator: 'Cmd+Alt+F', click: () => send('find-replace') },
         { label: 'Search Vault', accelerator: 'Cmd+Shift+F', click: () => send('search-vault') },
         { type: 'separator' },
         { label: 'Bold', accelerator: 'Cmd+B', click: () => send('format-bold') },
